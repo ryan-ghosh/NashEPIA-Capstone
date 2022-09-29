@@ -1,2 +1,2 @@
 # NashEPIA-Capstone
-Code for NE-PI-A problem for ECE496. 
+NE-PI-A code for ECE496. 
