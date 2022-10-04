@@ -10,18 +10,20 @@ class State:
         self.y = y
 
 class Agent:
-    def __init__(self, name, type: str, start_x: float, start_y: float, loss_fn):
+    def __init__(self, name, type: str, start_x: float, start_y: float, loss_fn, f, h):
         self.type = type
         self.loss_fn = loss_fn
         self.state = State(start_x, start_y)
         self.name = name
+        self.f = f
+        self.h = h
 
     def __repr__(self):
         return self.name
 
-    def update_state(self, new_x:float, new_y:float):
-        self.state.x = new_x
-        self.state.y = new_y
+    def update_state(self):
+        self.state.x = self.f(self.state.x, self.state.y)
+        self.state.y = self.h(self.state.x, self.state.y)
 
     def send_message(self) -> State:
         if self.type == ADVERSARIAL:
