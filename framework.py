@@ -39,7 +39,7 @@ class Agent:
         #     return State(n_x, n_y)
 
         # return self.state
-        return h(self.state)
+        return self.h(self.state)
 
 class Network:
     def __init__(self, agents, init_true_state: State, c_graph=None, o_graph=None):
