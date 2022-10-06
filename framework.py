@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 
 TRUTHFUL = 1
@@ -81,5 +82,5 @@ class NashEPIA:
         self.network = network
         self.solver = algo
 
-    def run(epsilon) -> tuple[int, float]:
+    def run(epsilon) -> tuple:
         pass
