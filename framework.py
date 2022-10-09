@@ -6,17 +6,19 @@ ADVERSARIAL = 0
 
 class State:
     def __init__(self, x:np.array):
-        self.x = x
+        self.x = x  ## n by m array (n is number of agents)
+        self.n = self.x.shape[0]
+        self.m = self.x.shape[1]
 
     def size(self):
       return self.x.shape[0]
 
 class Agent:
-    def __init__(self, name, type: int, init_state: np.array, loss_fn, f, h):
+    def __init__(self, id, type: int, init_state: np.array, loss_fn, f, h):
         self.type = type
+        self.id = id
         self.loss_fn = loss_fn
         self.state = State(init_state)
-        self.name = name
         self.f = f
         if type == ADVERSARIAL:
           self.h = h
@@ -24,10 +26,15 @@ class Agent:
           self.h = lambda x : x
 
     def __repr__(self):
-        return self.name
+        return str(id)
 
-    def update_state(self):
-        self.state.x = self.f(self.state.x)     ## how agent updates its estimate
+    def get_agent_state(self):
+        return self.state[self.id]
+    
+    def update_agent_state(self):
+        self.state[i] = self.f(self.state.x)     ## how agent updates its estimate
+
+    ## not sure how agent's state estimate should be updated
 
     def send_message(self) -> State:
         return self.h(self.state)
@@ -43,10 +50,10 @@ class DirectedGraph:
         
         ## determine neighbors of each vertex, i.e. neighbors[i] is a list
         ## of vertix indices j s.t. j->i is an edge in the graph
-        self.neighbors = [[] for i in range(self.V)]
+        self.in_neighbors = [[] for i in range(self.V)]
         for i in range(self.V):
             for j in self.adj_list[i]:
-                self.neighbors[j].append(i)
+                self.in_neighbors[j].append(i)
 
 class Network:
     def __init__(self, agents, init_true_state: State, c_graph=None, o_graph=None):
