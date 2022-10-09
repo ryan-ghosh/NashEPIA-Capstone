@@ -30,9 +30,9 @@ class Agent:
 
     def get_agent_state(self):
         return self.state[self.id]
-    
+
     def update_agent_state(self):
-        self.state[i] = self.f(self.state.x)     ## how agent updates its estimate
+        self.state[self.id] = self.f(self.state.x)     ## how agent updates its estimate
 
     ## not sure how agent's state estimate should be updated
 
@@ -47,7 +47,7 @@ class DirectedGraph:
 
         self.V = len(agents)
         self.adj_list = adj_list
-        
+
         ## determine neighbors of each vertex, i.e. neighbors[i] is a list
         ## of vertix indices j s.t. j->i is an edge in the graph
         self.in_neighbors = [[] for i in range(self.V)]
@@ -82,10 +82,11 @@ class Network:
             agent.update_state()
             message = agent.send_message()
             true_agent_state = agent.state
-            for neighbour in self.c_graph[agent]:
-                neighbour.state[agent] = message
-            
-            self.true_state[agent] = true_agent_state
+            agent_id = agent.id
+            for neighbour in self.c_graph[agent_id]:
+                neighbour.state[agent_id] = message
+
+            self.true_state[agent_id] = true_agent_state
 
     def compute_loss(self) -> float:
         loss = 0.0
