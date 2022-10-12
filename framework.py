@@ -62,8 +62,8 @@ class DirectedGraph:
                 if (self.adj_list[j][i] != 0):
                     self.in_neighbors[i].append(agents[j])
 
-        
-                
+
+
 
 class Network:
     def __init__(self, agents, init_true_state: State, c_graph=None, o_graph=None):
@@ -87,6 +87,7 @@ class Network:
           ## update agent internal states using ^^
           ## send messages stored in ^^^
 
+        # TODO(ryanghosh): mirror graph state here
         for agent in self.agents:
             ## assuming agent name member is index here, can change if necassary later
             agent.update_state()
