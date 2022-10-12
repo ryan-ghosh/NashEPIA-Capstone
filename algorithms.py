@@ -1,7 +1,7 @@
 # Algorithm implementations
 
 import numpy as np
-from framework import State, Agent, Network
+from framework import DirectedGraph, State, Agent, Network
 
 BASE_ITER = 100
 
@@ -12,17 +12,34 @@ class BaseLine:
         return self.name
 
     def baseline(self, Network):
+        N = len(Network.agents)
         # print('based')
         for k in range(BASE_ITER):
 
-            for i in range(Network.agents.size):
-                print(f'agent {i}: ', Network.agents[i].name)
-                for j in range(Network.c_graph[i].neighbors.size):      # iterate through neighbours of ith agent
-                    # send communicated message from agent i to agent j
-                    # (i.e., send y_ji[k] where j is an outgoing neighbor to agent i)
-                    # and receive all messages from agent j to agent i
-                    # (i.e., receive y_ij[k] where j is an incoming neighbor to agent i)
-                    pass
+            print("running baseline algo")
+            # print(Network.agents[0].id)
+
+            for i in range(N):
+                print(f"{Network.agents[i].id} communicates to    : ", [x.id for x in Network.c_graph.out_neighbors[i]])
+            
+            for i in range(N):
+                print(f"{Network.agents[i].id} receives comms from: ", [x.id for x in Network.c_graph.in_neighbors[i]])
+
+            for i in range(N):
+                print(f"{Network.agents[i].id} observes: ", [x.id for x in Network.o_graph.out_neighbors[i]])
+
+            # for i in range(N):
+            # step 1 of Dian's algo
+            Network.update_network_state()
+
+            # for i in range(Network.agents.size):
+            #     print(f'agent {i}: ', Network.agents[i].name)
+            #     for j in range(Network.c_graph[i].neighbors.size):      # iterate through neighbours of ith agent
+            #         # send communicated message from agent i to agent j
+            #         # (i.e., send y_ji[k] where j is an outgoing neighbor to agent i)
+            #         # and receive all messages from agent j to agent i
+            #         # (i.e., receive y_ij[k] where j is an incoming neighbor to agent i)
+            #         pass
 
             for m in range(Network.agents.size):
                 n_m = Network.agents[0].state.size
@@ -36,15 +53,32 @@ class BaseLine:
 
 if __name__ == "__main__":
     # quick sanity check
-    its = State(np.random.rand(10))
+    N = 3
+    M = 10
+    
+    its = State(np.random.rand(N,M))
     lfn = 1
-    a1 = Agent('a1', int, State(np.random.rand(10)), lfn, 0,0)
-    a2 = Agent('a2', int, State(np.random.rand(10)), lfn, 0,0)
-    a3 = Agent('a3', int, State(np.random.rand(10)), lfn, 0,0)
+    a1 = Agent("a1", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
+    a2 = Agent("a2", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
+    a3 = Agent("a3", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
+    a4 = Agent("a4", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
 
-    agents = np.array([a1, a2, a3], dtype=Agent)
+    agents = np.array([a1, a2, a3, a4], dtype=Agent)
 
-    net = Network(agents, its)
+    c_adj =    [[0,1,0,0],
+                [0,0,0,1],
+                [0,1,0,1],
+                [1,0,0,0]]
+
+    o_adj =    [[0,1,1,0],
+                [0,0,1,0],
+                [1,0,0,0],
+                [0,0,0,0]]
+
+    g_c = DirectedGraph(agents, c_adj)
+    g_o = DirectedGraph(agents, o_adj)
+
+    net = Network(agents, its, g_c, g_o)
 
     bl = BaseLine()
     bl.baseline(net)

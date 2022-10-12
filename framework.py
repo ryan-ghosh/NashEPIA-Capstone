@@ -5,7 +5,7 @@ TRUTHFUL = 1
 ADVERSARIAL = 0
 
 class State:
-    def __init__(self, x:np.array):
+    def __init__(self, x: np.array):
         self.x = x  ## n by m array (n is number of agents)
         self.n = self.x.shape[0]
         self.m = self.x.shape[1]
@@ -14,11 +14,12 @@ class State:
       return self.x.shape[0]
 
 class Agent:
-    def __init__(self, id, type: int, init_state: np.array, loss_fn, f, h):
+    def __init__(self, id, type: int, init_estate: np.array, init_cstate: np.array, loss_fn, f, h):
         self.type = type
         self.id = id
         self.loss_fn = loss_fn
-        self.state = State(init_state)
+        self.e_state = State(init_estate)
+        self.c_state = State(init_cstate)
         self.f = f
         if type == ADVERSARIAL:
           self.h = h
@@ -50,10 +51,19 @@ class DirectedGraph:
 
         ## determine neighbors of each vertex, i.e. neighbors[i] is a list
         ## of vertix indices j s.t. j->i is an edge in the graph
+        self.out_neighbors = [[] for i in range(self.V)]
         self.in_neighbors = [[] for i in range(self.V)]
+
         for i in range(self.V):
-            for j in self.adj_list[i]:
-                self.in_neighbors[j].append(i)
+            for j in range (self.V):
+                if (self.adj_list[i][j] != 0):
+                    self.out_neighbors[i].append(agents[j])
+                    # print("appending", agents[j].id, "to self_neighbors ",i)
+                if (self.adj_list[j][i] != 0):
+                    self.in_neighbors[i].append(agents[j])
+
+        
+                
 
 class Network:
     def __init__(self, agents, init_true_state: State, c_graph=None, o_graph=None):
@@ -100,5 +110,5 @@ class NashEPIA:
         self.network = network
         self.solver = algo
 
-    def run(epsilon) -> tuple[float, int]:  ## returns loss and number of iterations
-        pass
+    # def run(epsilon) -> tuple[float, int]:  ## returns loss and number of iterations
+    #     pass
