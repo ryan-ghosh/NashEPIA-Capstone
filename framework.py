@@ -27,10 +27,10 @@ class Agent:
           self.h = lambda x : x
 
     def __repr__(self):
-        return str(id)
+        return str(self.id)
 
     def get_agent_state(self):
-        return self.state[self.id]
+        return self.state.x[self.id]
 
     def update_agent_state(self):
         self.state[self.id] = self.f(self.state.x)     ## how agent updates its estimate
