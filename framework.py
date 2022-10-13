@@ -1,115 +1,96 @@
-from typing import Tuple
+from algorithms import *
 import numpy as np
 
 TRUTHFUL = 1
 ADVERSARIAL = 0
 
-class State:
-    def __init__(self, x: np.array):
-        self.x = x  ## n by m array (n is number of agents)
-        self.n = self.x.shape[0]
-        self.m = self.x.shape[1]
-
-    def size(self):
-      return self.x.shape[0]
-
 class Agent:
-    def __init__(self, id, type: int, init_estate: np.array, init_cstate: np.array, loss_fn, f, h):
+    def __init__(self, id: int, type: int, init_estate: np.array, loss_fn):
+        # Attributes
         self.type = type
         self.id = id
         self.loss_fn = loss_fn
-        self.e_state = State(init_estate)
-        self.c_state = State(init_cstate)
+        self.e_state = init_estate
+
+    def setup(self, g, f, h, G_o, G_c):
+        # Functions (property of algorithm)
+        self.g = g
         self.f = f
-        if type == ADVERSARIAL:
-          self.h = h
-        else:
-          self.h = lambda x : x
+        self.h = h if self.type == ADVERSARIAL else lambda x: x
+        self.c_state = h(self.e_state) # initialize first message
+
+        # Neighbors (property of network)
+        self.obs_neighbours = [i for i, v in enumerate(G_o[self.id]) if v]
+        self.comm_neighbours = [i for i, v in enumerate(G_c[self.id]) if v]
 
     def __repr__(self):
-        return str(self.id)
+        return self.id # integer from 0...n-1
 
-    def get_agent_state(self):
-        return self.state.x[self.id]
-
-    def update_agent_state(self):
-        self.state[self.id] = self.f(self.state.x)     ## how agent updates its estimate
-
-    ## not sure how agent's state estimate should be updated
-
-    def send_message(self) -> State:
-        return self.h(self.state)
-
-class DirectedGraph:
-    def __init__(self, agents, adj_list):
-        ## not sure how we want to design the graph, but I usually use an
-        ## adjacency list, i.e. adj_list[i] is a list of vertix indices j s.t.
-        ## the edge i->j exists in the graph
-
-        self.V = len(agents)
-        self.adj_list = adj_list
-
-        ## determine neighbors of each vertex, i.e. neighbors[i] is a list
-        ## of vertix indices j s.t. j->i is an edge in the graph
-        self.out_neighbors = [[] for i in range(self.V)]
-        self.in_neighbors = [[] for i in range(self.V)]
-
-        for i in range(self.V):
-            for j in range (self.V):
-                if (self.adj_list[i][j] != 0):
-                    self.out_neighbors[i].append(agents[j])
-                    # print("appending", agents[j].id, "to self_neighbors ",i)
-                if (self.adj_list[j][i] != 0):
-                    self.in_neighbors[i].append(agents[j])
-
-
-
+    def update_state(self, true_state, all_communications):
+        comm_messages = [all_communications[agent] for agent in self.comm_neighbours]
+        self.e_state = self.f(
+            self.id,
+            self.g(self.obs_neighbours, true_state, comm_messages), 
+            self.loss_fn
+        )
+        self.c_state = self.h(self.e_state)
 
 class Network:
-    def __init__(self, agents, init_true_state: State, c_graph=None, o_graph=None):
-        if c_graph is None and o_graph is None:
-            ## can use for random initialization of large networks
-            pass
-
-        self.c_graph = c_graph
-        self.o_graph = o_graph
+    def __init__(self, agents, init_true_state, G_c, G_o):
+        self.G_c = G_c
+        self.G_o = G_o
         self.agents = agents
-        self.weights = np.ones((len(self.agents), 1))   ## weights for each agent
         self.true_state = init_true_state
 
-
-    def update_network_state(self):
-        ## something like this might be possible
-
-        ## iterate over all possible agents
-          ## call agent.update_states and agent.send_message and store values
-          ## update network true state using ^
-          ## update agent internal states using ^^
-          ## send messages stored in ^^^
-
-        # TODO(ryanghosh): mirror graph state here
+    def iterate(self):
+        all_communications = [ agent.c_state for agent in self.agents ]
         for agent in self.agents:
-            ## assuming agent name member is index here, can change if necassary later
-            agent.update_state()
-            message = agent.send_message()
-            true_agent_state = agent.state
-            agent_id = agent.id
-            for neighbour in self.c_graph[agent_id]:
-                neighbour.state[agent_id] = message
-
-            self.true_state[agent_id] = true_agent_state
-
-    def compute_loss(self) -> float:
-        loss = 0.0
-        for agent in self.agents:
-            loss += agent.loss_fn(self.true_state)
-
-        return loss
+            agent.update_state(self.true_state, all_communications)
+            self.true_state[agent.id] = agent.e_state[agent.id]
 
 class NashEPIA:
-    def __init__(self, network, algo):
+    def __init__(self, network: Network, algo: Algorithm):
         self.network = network
         self.solver = algo
 
-    # def run(epsilon) -> tuple[float, int]:  ## returns loss and number of iterations
-    #     pass
+    def setup(self):
+        for agent in self.network.agents:
+            agent.setup(self.solver.g, self.solver.f, self.solver.h, self.network.G_c, self.network.G_o)
+
+    def run(self, epsilon):  
+        '''
+        Returns number of iterations to convergence with maximum L2-difference (Frobenius norm) between states epsilon
+        Also returns the final states for plotting the Nash equilibrium
+        '''
+        last_state = self.network.true_state
+        iterations = 0
+        while True:
+            iterations += 1
+            self.network.iterate()
+            frob_distance = np.linalg.norm( last_state.flatten() - self.network.true_state.flatten() )
+            print(f"Iteration {iterations}: L2-movement since last iter: {frob_distance}")
+            if frob_distance < epsilon: # convergence with
+                return (iterations, self.network.true_state)
+            last_state = self.network.true_state
+
+
+if __name__ == "__main__":
+    # Basic test - 3 robots who just want to converge to each other
+    # All are truthful and travel in only one dimension (Nash eq'm is all at the same spot)
+    n = 3
+    m = 1 # one dimensional
+    loss_fn = lambda state: sum([ (x1-x2)**2 for x1 in state for x2 in state ] ) 
+    init_states = np.random.normal(0, 16, size=(n,m)) # initial positions N(0,16)
+    agents = [ Agent(i, TRUTHFUL, init_states.copy(), loss_fn) for i in range(3) ]
+    print(f"Starting positions: {init_states}\n\n")
+
+    G_c = np.array([ [0,1,1], [1,0,1], [1,1,0] ]) # fully connected
+    G_o = np.eye(3) # only self-observational
+    net = Network(agents, init_states, G_c, G_o)
+    algo = SimpleMean(alpha=0.01)
+
+    # Run test
+    nepia = NashEPIA(net, algo)
+    nepia.setup()
+    results = nepia.run(epsilon=1e-6)
+    print(f"\n\n Results: {results} \n\n")

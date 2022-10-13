@@ -4,6 +4,10 @@ import argparse
 from algorithms import *
 from framework import NashEPIA
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+
 ALGORITHMS = {"baseline": BaseLine}
 
 class TestNashEPIA:

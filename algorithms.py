@@ -1,15 +1,58 @@
 # Algorithm implementations
 
 import numpy as np
-from framework import DirectedGraph, State, Agent, Network
+import torch
 
 BASE_ITER = 100
 
-class BaseLine:
-    name = "BaseLine"
+class Algorithm:
+    # Generic wrapper for all algorithm classes
+
+    def __init__(self):
+        self.g = None # estimation function
+        self.f = None # update function
+        self.h = None # adversarial communication function
+
+class SimpleMean(Algorithm):
+    name = "SimpleMean"
 
     def __repr__(self):
         return self.name
+    
+    def __init__(self, alpha):
+        self.alpha = alpha
+
+        def estimate_func(observations, true_state, incoming_comms): 
+            arr_shape = incoming_comms[0].shape
+            v = np.empty(arr_shape) # assume they get at least one 
+            for agent in observations:
+                v[agent] = true_state[agent] # ground truth
+            # Use simple mean of other communications (essentially setting D=0 in his algo)
+            for agent in range(arr_shape[0]):
+                if agent not in observations:
+                    v[agent] = np.mean([c[agent] for c in incoming_comms])
+            return v
+        self.g = estimate_func
+
+        def update_func(agent_id, state_estimate, loss_fn, alpha=self.alpha):
+            x_tensor = torch.autograd.Variable(torch.Tensor(state_estimate), requires_grad=True)
+            y = loss_fn(x_tensor)
+            y.backward()
+            grad = x_tensor.grad
+            print(grad)
+            new_state = state_estimate
+            new_state[agent_id] -= alpha * grad[agent_id].cpu().detach().numpy() # gradient descent step
+            return new_state 
+        self.f = update_func
+
+        def communicate_func(state_estimate):
+            return state_estimate + np.random.normal(size=state_estimate.shape) # add Gaussian noise
+        self.h = communicate_func
+
+
+"""
+class BaseLine:
+
 
     def baseline(self, Network):
         N = len(Network.agents)
@@ -82,3 +125,4 @@ if __name__ == "__main__":
 
     bl = BaseLine()
     bl.baseline(net)
+"""
