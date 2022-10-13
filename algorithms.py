@@ -39,9 +39,9 @@ class SimpleMean(Algorithm):
             y = loss_fn(x_tensor)
             y.backward()
             grad = x_tensor.grad
-            print(grad)
             new_state = state_estimate
             new_state[agent_id] -= alpha * grad[agent_id].cpu().detach().numpy() # gradient descent step
+
             return new_state 
         self.f = update_func
 

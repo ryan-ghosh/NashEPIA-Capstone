@@ -1,5 +1,6 @@
 from algorithms import *
 import numpy as np
+from matplotlib import pyplot as plt
 
 TRUTHFUL = 1
 ADVERSARIAL = 0
@@ -46,6 +47,7 @@ class Network:
         all_communications = [ agent.c_state for agent in self.agents ]
         for agent in self.agents:
             agent.update_state(self.true_state, all_communications)
+        for agent in self.agents:
             self.true_state[agent.id] = agent.e_state[agent.id]
 
 class NashEPIA:
@@ -62,16 +64,20 @@ class NashEPIA:
         Returns number of iterations to convergence with maximum L2-difference (Frobenius norm) between states epsilon
         Also returns the final states for plotting the Nash equilibrium
         '''
-        last_state = self.network.true_state
+
+        distance_vector = []
+
+        last_state = np.copy(self.network.true_state)
         iterations = 0
         while True:
             iterations += 1
             self.network.iterate()
             frob_distance = np.linalg.norm( last_state.flatten() - self.network.true_state.flatten() )
+            distance_vector.append(frob_distance)
             print(f"Iteration {iterations}: L2-movement since last iter: {frob_distance}")
             if frob_distance < epsilon: # convergence with
-                return (iterations, self.network.true_state)
-            last_state = self.network.true_state
+                return (iterations, distance_vector, self.network.true_state)
+            last_state = np.copy(self.network.true_state)
 
 
 if __name__ == "__main__":
@@ -81,7 +87,7 @@ if __name__ == "__main__":
     m = 1 # one dimensional
     loss_fn = lambda state: sum([ (x1-x2)**2 for x1 in state for x2 in state ] ) 
     init_states = np.random.normal(0, 16, size=(n,m)) # initial positions N(0,16)
-    agents = [ Agent(i, TRUTHFUL, init_states.copy(), loss_fn) for i in range(3) ]
+    agents = [ Agent(i, TRUTHFUL, np.copy(init_states), loss_fn) for i in range(3) ]
     print(f"Starting positions: {init_states}\n\n")
 
     G_c = np.array([ [0,1,1], [1,0,1], [1,1,0] ]) # fully connected
@@ -94,3 +100,9 @@ if __name__ == "__main__":
     nepia.setup()
     results = nepia.run(epsilon=1e-6)
     print(f"\n\n Results: {results} \n\n")
+
+    plt.plot([i for i in range(results[0])], results[1])
+    plt.title("Three Robots on a Line Converging to a Nash Eq'm")
+    plt.ylabel("Loss")
+    plt.xlabel("Iteration")
+    plt.show()
