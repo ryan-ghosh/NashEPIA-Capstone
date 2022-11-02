@@ -20,7 +20,7 @@ class SimpleMean(Algorithm):
         return self.name
     
     def __init__(self, alpha):
-        self.alpha = alpha
+        self.alpha = float(alpha)
 
         def estimate_func(observations, true_state, incoming_comms): 
             arr_shape = incoming_comms[0].shape

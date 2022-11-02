@@ -60,7 +60,7 @@ class NashEPIA:
         for agent in self.network.agents:
             agent.setup(self.solver.g, self.solver.f, self.solver.h, self.network.G_c, self.network.G_o)
 
-    def run(self, epsilon):  
+    def run(self, epsilon, max_iter = 1000000):  
         '''
         Returns number of iterations to convergence with maximum L2-difference (Frobenius norm) between states epsilon
         Also returns the final states for plotting the Nash equilibrium
@@ -70,7 +70,7 @@ class NashEPIA:
 
         last_state = np.copy(self.network.true_state)
         iterations = 0
-        while True:
+        while iterations < max_iter:
             iterations += 1
             self.network.iterate()
             frob_distance = np.linalg.norm( last_state.flatten() - self.network.true_state.flatten() )
@@ -80,6 +80,10 @@ class NashEPIA:
             if frob_distance < epsilon: # convergence with
                 return (iterations, distance_vector, all_states, self.network.true_state)
             last_state = np.copy(self.network.true_state)
+        
+        print(f"Did not converge within max iterations of {max_iter}")
+        return (iterations, distance_vector, all_states, self.network.true_state)
+
 
 if __name__ == "__main__":
     # Basic test - 3 robots who just want to converge to each other
