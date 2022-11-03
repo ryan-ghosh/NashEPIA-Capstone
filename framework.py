@@ -60,7 +60,7 @@ class NashEPIA:
         for agent in self.network.agents:
             agent.setup(self.solver.g, self.solver.f, self.solver.h, self.network.G_c, self.network.G_o)
 
-    def run(self, epsilon, max_iter = 1000000):  
+    def run(self, epsilon, max_iter = 10000):  
         '''
         Returns number of iterations to convergence with maximum L2-difference (Frobenius norm) between states epsilon
         Also returns the final states for plotting the Nash equilibrium

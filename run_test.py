@@ -14,7 +14,8 @@ ALGORITHMS = { # "baseline": BaseLine,
 
 class TestNashEPIA:
     tests = [
-        "tests/simple_test.json"
+        "tests/simple_test.json",
+        "tests/simple_test_adversary.json"
     ]
 
     def __init__(self, algo):
@@ -54,6 +55,7 @@ class TestNashEPIA:
         # parse out info
         n, m = test["num_agents"], test["state_dim"]
         G_c, G_o = np.array(test["G_c"]), np.array(test["G_o"])
+        loss_fn = eval(test["loss_fn"])
 
         # state initialization
         if test["random_init_state"]:
@@ -67,6 +69,7 @@ class TestNashEPIA:
             init_states = np.array(test["deterministic_init_state"])
 
         # TODO: figure out how to pass in noisey adveraries
+        # Current set up adds standard normal noise to adversary output
         agents = []
         for i in range(n):
             if str(i) in test["adversaries"]:

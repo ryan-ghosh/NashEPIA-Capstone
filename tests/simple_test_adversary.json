@@ -15,6 +15,12 @@
     "init_state_params": [0, 16],
 
     "adversaries": {
+        "0": {"type": "gaussian noise", "params": [0, 1],
+            "loss_fn": "lambda state: sum([ torch.norm(x1-x2)**2 for x1 in state for x2 in state ] )"
+        },
+        "1": {"type": "gaussian noise", "params": [0, 1],
+            "loss_fn": "lambda state: sum([ torch.norm(x1-x2)**2 for x1 in state for x2 in state ] )"
+        },
         "2": {"type": "gaussian noise", "params": [0, 1],
               "loss_fn": "lambda state: sum([ torch.norm(x1-x2)**2 for x1 in state for x2 in state ] )"
              }
