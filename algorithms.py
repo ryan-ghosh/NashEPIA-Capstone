@@ -5,6 +5,11 @@ import torch
 
 BASE_ITER = 100
 
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
 class Algorithm:
     # Generic wrapper for all algorithm classes
 
@@ -49,80 +54,57 @@ class SimpleMean(Algorithm):
             return state_estimate + np.random.normal(size=state_estimate.shape) # add Gaussian noise
         self.h = communicate_func
 
+class ExpGaussianConverge(Algorithm):
+    name = "ExpGaussianConverge"
 
-"""
-class BaseLine:
-
-
-    def baseline(self, Network):
-        N = len(Network.agents)
-        # print('based')
-        for k in range(BASE_ITER):
-
-            print("running baseline algo")
-            # print(Network.agents[0].id)
-
-            for i in range(N):
-                print(f"{Network.agents[i].id} communicates to    : ", [x.id for x in Network.c_graph.out_neighbors[i]])
-            
-            for i in range(N):
-                print(f"{Network.agents[i].id} receives comms from: ", [x.id for x in Network.c_graph.in_neighbors[i]])
-
-            for i in range(N):
-                print(f"{Network.agents[i].id} observes: ", [x.id for x in Network.o_graph.out_neighbors[i]])
-
-            # for i in range(N):
-            # step 1 of Dian's algo
-            Network.update_network_state()
-
-            # for i in range(Network.agents.size):
-            #     print(f'agent {i}: ', Network.agents[i].name)
-            #     for j in range(Network.c_graph[i].neighbors.size):      # iterate through neighbours of ith agent
-            #         # send communicated message from agent i to agent j
-            #         # (i.e., send y_ji[k] where j is an outgoing neighbor to agent i)
-            #         # and receive all messages from agent j to agent i
-            #         # (i.e., receive y_ij[k] where j is an incoming neighbor to agent i)
-            #         pass
-
-            for m in range(Network.agents.size):
-                n_m = Network.agents[0].state.size
-                for q in range(n_m):
-                    # need set T of truthful agents.
-                    # for i in range(Network.T.size):
-                    #
-                    #   remove D highest and D smallest vals y_mq^ij that are larger and smaller than x_mq^i
-                    #  y_mq^ij = agent j's communicated message to agent i about the qth comp of agent m's action
-                    pass
-
-if __name__ == "__main__":
-    # quick sanity check
-    N = 3
-    M = 10
+    def __repr__(self):
+        return self.name
     
-    its = State(np.random.rand(N,M))
-    lfn = 1
-    a1 = Agent("a1", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
-    a2 = Agent("a2", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
-    a3 = Agent("a3", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
-    a4 = Agent("a4", int, np.random.rand(N,M), np.random.rand(N,M), lfn, 0,0)
+    def __init__(self, alpha, gamma):
+        self.alpha = float(alpha)
+        self.gamma = float(gamma)
+        self.p = None # vector of n values for weighting truthfulness
 
-    agents = np.array([a1, a2, a3, a4], dtype=Agent)
+        def estimate_func(observations, true_state, incoming_comms): 
+            n_i = len(incoming_comms) # number of communication partners
+            arr_shape = incoming_comms[0].shape
+            if self.p is None:
+                self.p = np.zeros(n_i)
 
-    c_adj =    [[0,1,0,0],
-                [0,0,0,1],
-                [0,1,0,1],
-                [1,0,0,0]]
+            v = np.empty(arr_shape) # assume they get at least one 
+        
+            for agent in range(arr_shape[0]):
+                if agent in observations:
+                    v[agent] = true_state[agent] # ground truth
+                else:
+                    # Update historical truthfulness values using Gaussian approach
+                    mu = np.mean([c[agent] for c in incoming_comms], axis=0)
+                    cov = np.cov(np.array([c[agent] for c in incoming_comms]).T)
+                    inv_cov = np.linalg.inv(cov+np.eye(arr_shape[1])*1e-9) # to avoid singularity
+                    for m, c in enumerate(incoming_comms): # m is indexed relative to the mth communication partner
+                        self.p[m] = (1-self.gamma)*self.p[m] - 0.5*self.gamma*((c[m]-mu) @ inv_cov @ (c[m]-mu).T)
 
-    o_adj =    [[0,1,1,0],
-                [0,0,1,0],
-                [1,0,0,0],
-                [0,0,0,0]]
+            for agent in range(arr_shape[0]):
+                weights = softmax(self.p)
+                print(weights)
+                if agent not in observations:
+                    v[agent] = np.sum([weights[i]*incoming_comms[i][agent] for i in range(n_i)], axis=0) # weighted sum by truthfulness
+            return v
+        self.g = estimate_func
 
-    g_c = DirectedGraph(agents, c_adj)
-    g_o = DirectedGraph(agents, o_adj)
+        # Update and communication functions remain unchanged!
 
-    net = Network(agents, its, g_c, g_o)
+        def update_func(agent_id, state_estimate, loss_fn, alpha=self.alpha):
+            x_tensor = torch.autograd.Variable(torch.Tensor(state_estimate), requires_grad=True)
+            y = loss_fn(x_tensor)
+            y.backward()
+            grad = x_tensor.grad
+            new_state = state_estimate
+            new_state[agent_id] -= alpha * grad[agent_id].cpu().detach().numpy() # gradient descent step
 
-    bl = BaseLine()
-    bl.baseline(net)
-"""
+            return new_state 
+        self.f = update_func
+
+        def communicate_func(state_estimate):
+            return state_estimate + np.random.normal(size=state_estimate.shape) # add Gaussian noise
+        self.h = communicate_func

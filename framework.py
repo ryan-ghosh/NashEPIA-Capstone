@@ -38,11 +38,13 @@ class Agent:
         self.c_state = self.h(self.e_state)
 
 class Network:
-    def __init__(self, agents, init_true_state, G_c, G_o):
+    def __init__(self, agents, init_true_state, G_c, G_o, adversaries):
         self.G_c = G_c
         self.G_o = G_o
         self.agents = agents
         self.true_state = init_true_state
+        self.adversaries = adversaries
+        self.truthful = [i for i in range(len(agents)) if i not in adversaries]
 
     def iterate(self):
         all_communications = [ agent.c_state for agent in self.agents ]
@@ -58,7 +60,7 @@ class NashEPIA:
 
     def setup(self):
         for agent in self.network.agents:
-            agent.setup(self.solver.g, self.solver.f, self.solver.h, self.network.G_c, self.network.G_o)
+            agent.setup(self.solver.g, self.solver.f, self.solver.h, self.network.G_o, self.network.G_c)
 
     def run(self, epsilon, max_iter = 10000):  
         '''
@@ -73,58 +75,16 @@ class NashEPIA:
         while iterations < max_iter:
             iterations += 1
             self.network.iterate()
-            frob_distance = np.linalg.norm( last_state.flatten() - self.network.true_state.flatten() )
+            # Only take equilibrium of truthful agents
+            last_state_truthful = last_state[self.network.truthful]
+            current_state_truthful = self.network.true_state[self.network.truthful]
+            frob_distance = np.linalg.norm( last_state_truthful.flatten() - current_state_truthful.flatten() )
             distance_vector.append(frob_distance)
             all_states.append(last_state)
-            print(f"Iteration {iterations}: L2-movement since last iter: {frob_distance}")
+            #print(f"Iteration {iterations}: L2-movement since last iter: {frob_distance}")
             if frob_distance < epsilon: # convergence with
                 return (iterations, distance_vector, all_states, self.network.true_state)
             last_state = np.copy(self.network.true_state)
         
         print(f"Did not converge within max iterations of {max_iter}")
         return (iterations, distance_vector, all_states, self.network.true_state)
-
-
-if __name__ == "__main__":
-    # Basic test - 3 robots who just want to converge to each other
-    # All are truthful and travel in only one dimension (Nash eq'm is all at the same spot)
-    n = 3
-    m = 2 # two dimensional
-    loss_fn = lambda state: sum([ torch.norm(x1-x2)**2 for x1 in state for x2 in state ] ) 
-    init_states = np.random.normal(0, 16, size=(n,m)) # initial positions N(0,16)
-    agents = [ Agent(i, TRUTHFUL, np.copy(init_states), loss_fn) for i in range(3) ]
-    print(f"Starting positions: {init_states}\n\n")
-
-    G_c = np.array([ [0,1,1], [1,0,1], [1,1,0] ]) # fully connected
-    G_o = np.eye(3) # only self-observational
-    net = Network(agents, init_states, G_c, G_o)
-    algo = SimpleMean(alpha=0.01)
-
-    # Run test
-    nepia = NashEPIA(net, algo)
-    nepia.setup()
-    results = nepia.run(epsilon=1e-6)
-    print(f"\n\n Results: {results} \n\n")
-
-    # Loss plot
-    '''
-    plt.plot([i for i in range(results[0])], results[1])
-    plt.title(f"{n} Robots in {m}D Space Converging to a Nash Eq'm")
-    plt.ylabel("Loss")
-    plt.xlabel("Iteration")
-    plt.show()
-    '''
-
-    # Realtime plot
-    plt.clf()
-    plt.axis([-10, 10, -10, 10])
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"Realtime Dynamics of the {n} Robot System")
-    for i in range(results[0]):
-        plt.scatter(results[2][i][0][0], results[2][i][0][1], color="r")
-        plt.scatter(results[2][i][1][0], results[2][i][1][1], color="b")
-        plt.scatter(results[2][i][2][0], results[2][i][2][1], color="g")
-        plt.pause(0.05)
-
-    plt.show()
