@@ -17,8 +17,9 @@ ALGORITHMS = {
 class TestNashEPIA:
     tests = [
         # "tests/simple_test.json",
-        "tests/simple_test_adversary.json",
-        #"tests/5n_2d_1a_1.json",
+        # "tests/simple_test_adversary.json",
+        # "tests/5n_2d_1a_1.json",
+        "tests/dian.json"
     ]
 
     def __init__(self, algo, n, vis):
@@ -46,16 +47,15 @@ class TestNashEPIA:
                 if self.visualize and len(test.agents[0].e_state[0]) == 2:
                     # Realtime plot of 4 robot system
                     xmin = np.min(np.array(novel_states)[:,:,0])
-                    xmin = min(-20, xmin - 0.1*abs(xmin))
                     xmax = np.max(np.array(novel_states)[:,:,0])
-                    xmax = max(20, xmax + 0.1*abs(xmax))
+                    rx = xmax-xmin
                     ymin = np.min(np.array(novel_states)[:,:,1])
-                    ymin = min(-20, ymin - 0.1*abs(ymin))
                     ymax = np.max(np.array(novel_states)[:,:,1])
-                    ymax = max(20, ymax + 0.1*abs(ymax))
+                    ry = ymax-ymin
 
                     plt.clf()
-                    plt.axis([xmin, xmax, ymin, ymax])
+                    plt.axis([xmin - 0.1*rx, xmax + 0.1*rx, 
+                              ymin - 0.1*ry, ymax + 0.1*ry])
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
@@ -88,7 +88,6 @@ class TestNashEPIA:
         # parse out info
         n, m = test["num_agents"], test["state_dim"]
         G_c, G_o = np.array(test["G_c"]), np.array(test["G_o"])
-        loss_fn = eval(test["loss_fn"])
 
         # state initialization
         if test["random_init_state"]:
@@ -105,16 +104,36 @@ class TestNashEPIA:
         agents = []
         adversaries = []
         for i in range(n):
+            loss_fn = self.generate_loss_fn(test, i)
             if str(i) in test["adversaries"]:
-                agents.append(Agent(i, ADVERSARIAL, np.copy(init_states), 
-                    eval(test["adversaries"][str(i)]["loss_fn"])))
+                agents.append(Agent(i, ADVERSARIAL, np.copy(init_states), loss_fn))
                 adversaries.append(i)
             else:
-                agents.append(Agent(i, TRUTHFUL, np.copy(init_states), 
-                    loss_fn))
+                agents.append(Agent(i, TRUTHFUL, np.copy(init_states), loss_fn))
 
         # create Network object
         return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"]
+
+    def generate_loss_fn(self, test, id):
+        # extract loss_fn
+        if str(id) in test["adversaries"]:
+            loss_fn = test["adversaries"][str(id)]["loss_fn"]
+        else:
+            loss_fn = test["loss_fn"]
+        
+        # generate loss_fn accordingly
+        if loss_fn == "dian":
+            # as defined in Dian's paper...
+            def f(state):
+                cost = 0.5*torch.norm(torch.mean(state, axis=0) - torch.Tensor(test["Q"]))**2 # 'a' term
+                if str(id) in test["subsets"]: # add 'r_i' term
+                    for j, dij in test["subsets"][str(id)].items():
+                        cost += 0.5*torch.norm(state[id] - state[int(j)] - torch.Tensor(dij))**2
+                return cost
+
+            return f
+        else:
+            return eval(loss_fn)
 
 
 
