@@ -60,7 +60,8 @@ class TestNashEPIA:
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
                     for robot in range(len(test.agents)):
-                        plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)])
+                        plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)], 
+                            '--' if test.agents[robot].type == ADVERSARIAL else '-')
                         plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20)
                     plt.show()
 
