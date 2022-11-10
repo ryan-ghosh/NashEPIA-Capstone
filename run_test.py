@@ -17,8 +17,8 @@ ALGORITHMS = {
 class TestNashEPIA:
     tests = [
         # "tests/simple_test.json",
-        #"tests/simple_test_adversary.json",
-        "tests/5n_2d_1a_1.json"
+        "tests/simple_test_adversary.json",
+        #"tests/5n_2d_1a_1.json",
     ]
 
     def __init__(self, algo, n, vis):
