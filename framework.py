@@ -81,10 +81,15 @@ class NashEPIA:
             frob_distance = np.linalg.norm( last_state_truthful.flatten() - current_state_truthful.flatten() )
             distance_vector.append(frob_distance)
             all_states.append(last_state)
-            #print(f"Iteration {iterations}: L2-movement since last iter: {frob_distance}")
+            
+            if iterations % 100 == 0:
+                print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
+
             if frob_distance < epsilon: # convergence with
+                print(f"Terminated on iteration: {iterations}, Last L2 Change: {frob_distance}")
                 return (iterations, distance_vector, all_states, self.network.true_state)
             last_state = np.copy(self.network.true_state)
+
         
         print(f"Did not converge within max iterations of {max_iter}")
         return (iterations, distance_vector, all_states, self.network.true_state)

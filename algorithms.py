@@ -86,7 +86,7 @@ class ExpGaussianConverge(Algorithm):
 
             for agent in range(arr_shape[0]):
                 weights = softmax(self.p)
-                print(weights)
+                # print(weights)
                 if agent not in observations:
                     v[agent] = np.sum([weights[i]*incoming_comms[i][agent] for i in range(n_i)], axis=0) # weighted sum by truthfulness
             return v

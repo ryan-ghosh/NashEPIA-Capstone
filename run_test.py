@@ -16,8 +16,9 @@ ALGORITHMS = {
 
 class TestNashEPIA:
     tests = [
-        "tests/simple_test.json",
-        #"tests/simple_test_adversary.json"
+        # "tests/simple_test.json",
+        #"tests/simple_test_adversary.json",
+        "tests/5n_2d_1a_1.json"
     ]
 
     def __init__(self, algo, n, vis):
@@ -42,10 +43,19 @@ class TestNashEPIA:
                 # bl_iter, bl_dist, bl_states, bl_true_states = baseline_Nash.run() <-- need to fill some values here
                 novel_iter, novel_dist, novel_states, novel_final_state = novel_Nash.run(eps, max_iter)
                 
-                if self.visualize:
+                if self.visualize and len(test.agents[0].e_state[0]) == 2:
                     # Realtime plot of 4 robot system
+                    xmin = np.min(np.array(novel_states)[:,:,0])
+                    xmin = min(-20, xmin - 0.1*abs(xmin))
+                    xmax = np.max(np.array(novel_states)[:,:,0])
+                    xmax = max(20, xmax + 0.1*abs(xmax))
+                    ymin = np.min(np.array(novel_states)[:,:,1])
+                    ymin = min(-20, ymin - 0.1*abs(ymin))
+                    ymax = np.max(np.array(novel_states)[:,:,1])
+                    ymax = max(20, ymax + 0.1*abs(ymax))
+
                     plt.clf()
-                    plt.axis([-20, 20, -20, 20])
+                    plt.axis([xmin, xmax, ymin, ymax])
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
