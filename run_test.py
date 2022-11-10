@@ -10,14 +10,14 @@ import json
 
 
 ALGORITHMS = { 
-    #"SimpleMean": SimpleMean,
+    "SimpleMean": SimpleMean,
     "ExpGaussianConverge": ExpGaussianConverge
 }
 
 class TestNashEPIA:
     tests = [
-        #"tests/simple_test.json",
-        "tests/simple_test_adversary.json"
+        "tests/simple_test.json",
+        #"tests/simple_test_adversary.json"
     ]
 
     def __init__(self, algo, n, vis):
@@ -49,18 +49,10 @@ class TestNashEPIA:
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
-                    plt.plot([novel_states[i][0][0] for i in range(novel_iter)], [novel_states[i][0][1] for i in range(novel_iter)], color="r")
-                    plt.plot([novel_states[i][1][0] for i in range(novel_iter)], [novel_states[i][1][1] for i in range(novel_iter)], color="g")
-                    plt.plot([novel_states[i][2][0] for i in range(novel_iter)], [novel_states[i][2][1] for i in range(novel_iter)], color="b")
-                    plt.plot([novel_states[i][3][0] for i in range(novel_iter)], [novel_states[i][3][1] for i in range(novel_iter)], color="k")
-
-  
-                    plt.scatter(novel_final_state[0][0], novel_final_state[0][0], color="r", marker="*", s=20)
-                    plt.scatter(novel_final_state[1][0], novel_final_state[1][1], color="b", marker="*", s=20)
-                    plt.scatter(novel_final_state[2][0], novel_final_state[2][1], color="g", marker="*", s=20)
-                    plt.scatter(novel_final_state[3][0], novel_final_state[3][1], color="k", marker="*", s=20)
-
-                plt.show()
+                    for robot in range(len(test.agents)):
+                        plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)])
+                        plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20)
+                    plt.show()
 
                 total_iter[i] += novel_iter
                 print(novel_states)
