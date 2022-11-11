@@ -38,8 +38,10 @@
     "init_state_distribution": "uniform",
     "init_state_params": [-7, 7],
 
-    "adversaries": {},
+    "adversaries": {"0": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
+                    "9": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
+                    "11": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"}},
 
     "eps": 0.001,
-    "max_iter": 1000
+    "max_iter": 10000
 }
