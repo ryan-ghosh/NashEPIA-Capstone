@@ -70,7 +70,7 @@ class NashEPIA:
         Also returns the final states for plotting the Nash equilibrium
         '''
 
-        distance_vector, all_states = [], []
+        all_states, all_truthful_states = [], []
 
         last_state = np.copy(self.network.true_state)
         iterations = 0
@@ -81,8 +81,8 @@ class NashEPIA:
             last_state_truthful = last_state[self.network.truthful]
             current_state_truthful = self.network.true_state[self.network.truthful]
             frob_distance = np.linalg.norm( last_state_truthful.flatten() - current_state_truthful.flatten() )
-            distance_vector.append(frob_distance)
             all_states.append(last_state)
+            all_truthful_states.append(last_state_truthful)
             
             if iterations % 100 == 0:
                 pass
@@ -90,9 +90,11 @@ class NashEPIA:
 
             if frob_distance < epsilon: # convergence with
                 #print(f"Terminated on iteration: {iterations}, Last L2 Change: {frob_distance}")
+                # Compute distance vector from states for truthful agents
+                distance_vector = [ np.linalg.norm(s-current_state_truthful) for s in all_truthful_states ]
                 return (iterations, distance_vector, all_states, self.network.true_state)
+
             last_state = np.copy(self.network.true_state)
 
-        
         print(f"Did not converge within max iterations of {max_iter}")
         return (iterations, distance_vector, all_states, self.network.true_state)

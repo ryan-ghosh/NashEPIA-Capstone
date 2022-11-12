@@ -7,6 +7,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import time
 
 
 ALGORITHMS = { 
@@ -17,16 +18,17 @@ ALGORITHMS = {
 class TestNashEPIA:
     tests = [
         "tests/simple_test.json",
-        "tests/simple_test_adversary.json",
-        "tests/5n_2d_1a_1.json",
-        "tests/dian.json"
+        #"tests/simple_test_adversary.json",
+        #"tests/5n_2d_1a_1.json",
+        #"tests/dian.json"
     ]
 
-    def __init__(self, algo, n, vis, params):
+    def __init__(self, algo, n, vis, loss_plot, params):
         self.algo = algo
         self.n = n
         self.visualize = vis
         self.params = params
+        self.loss_plot = loss_plot
         if params:
             for i,p in enumerate(params):
                 self.params[i] = float(p) # convert strings to float arg
@@ -38,6 +40,7 @@ class TestNashEPIA:
         novel_win_iter = 0.0
         failed_tests = list()
 
+        start_time = time.time()
         total_iter = [0]*total_tests
         for k in range(self.n):
             for i, testpath in enumerate(self.tests):
@@ -73,10 +76,21 @@ class TestNashEPIA:
                         plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20)
                     plt.show()
 
+                if self.loss_plot:
+                    plt.title("Distance to the Nash equilibrium as a function of iterations")
+                    plt.plot([i for i in range(novel_iter)], novel_dist)
+                    plt.xlabel("Iteration")
+                    plt.ylabel("$||x-x*||$")
+                    plt.show()
+
                 total_iter[i] += novel_iter
         
+        test_time = time.time() - start_time
+
         for i in range(total_tests): 
             print(f'Test {self.tests[i]}: {self.algo} average iterations: {total_iter[i] / self.n} across {self.n} tests')
+        
+        print(f'Total wall time elapsed for all tests: {test_time} s')
 
     def parse_test(self, test_path):
         with open(test_path, 'r') as f:
@@ -140,13 +154,15 @@ if __name__ == '__main__':
     parser.add_argument("--algo_args", default=None, help="arguments for algorithm", nargs='*')
     parser.add_argument("--num_repeat", required=True, help="number of times to run each test")
     parser.add_argument("--visualize", default=False, help="will show a plot of convergence")
+    parser.add_argument("--loss_plot", default=False, help="Plot loss verse iterations")
 
     args = parser.parse_args()
     novel_algo = args.algo
     params = args.algo_args
     num_repeat = int(args.num_repeat)
     vis = args.visualize
+    loss_plot = bool(args.loss_plot)
 
-    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, list(params))
+    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, loss_plot, list(params))
 
     tester.run()

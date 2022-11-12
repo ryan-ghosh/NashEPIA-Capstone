@@ -1,6 +1,7 @@
 # Algorithm implementations
 
 import numpy as np
+from scipy import stats
 import torch
 
 BASE_ITER = 100
@@ -77,9 +78,10 @@ class ExpGaussianConverge(Algorithm):
     def __init__(self):
         self.name = "ExpGaussianConverge"
 
-    def setup(self, alpha, gamma):
+    def setup(self, alpha, gamma, T):
         self.alpha = float(alpha)
         self.gamma = float(gamma)
+        self.T = float(T)
         self.p = None # vector of n values for weighting truthfulness
 
         def estimate_func(observations, true_state, incoming_comms): 
@@ -89,21 +91,27 @@ class ExpGaussianConverge(Algorithm):
                 self.p = np.zeros(n_i)
 
             v = np.empty(arr_shape) # assume they get at least one 
-        
+            collapsed = list()
             for agent in range(arr_shape[0]):
                 if agent in observations:
                     v[agent] = true_state[agent] # ground truth
                 else:
                     # Update historical truthfulness values using Gaussian approach
-                    mu = np.mean([c[agent] for c in incoming_comms], axis=0)
-                    cov = np.cov(np.array([c[agent] for c in incoming_comms]).T)
-                    inv_cov = np.linalg.inv(cov+np.eye(arr_shape[1])*1e-12) # to avoid singularity
-                    for m, c in enumerate(incoming_comms): # m is indexed relative to the mth communication partner
-                        self.p[m] = (1-self.gamma)*self.p[m] - 0.5*self.gamma*((c[m]-mu) @ inv_cov @ (c[m]-mu).T)
-
-            weights = softmax(self.p)
+                    comms = np.array([c[agent] for c in incoming_comms])
+                    mu = np.mean(comms, axis=0)
+                    cov = np.cov(comms.T)
+                    inv_cov = None
+                    try:
+                        inv_cov = np.linalg.inv(cov) # to avoid singularity
+                        for m, c in enumerate(incoming_comms): # m is indexed relative to the mth communication partner
+                            self.p[m] = (1-self.gamma)*self.p[m] - 0.5*self.gamma*((c[m]-mu) @ inv_cov @ (c[m]-mu).T)
+                    except np.linalg.LinAlgError:
+                        v[agent] = np.array(stats.mode(comms)[0])
+                        collapsed.append(agent)
+                        
+            weights = softmax(self.p, T) # temperatured softmax
             for agent in range(arr_shape[0]):
-                if agent not in observations:
+                if agent not in observations and agent not in collapsed:
                     v[agent] = np.sum([weights[i]*incoming_comms[i][agent] for i in range(n_i)], axis=0) # weighted sum by truthfulness
             return v
         self.g = estimate_func
