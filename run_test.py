@@ -17,10 +17,10 @@ ALGORITHMS = {
 
 class TestNashEPIA:
     tests = [
-        "tests/simple_test.json",
+        #"tests/simple_test.json",
         #"tests/simple_test_adversary.json",
         #"tests/5n_2d_1a_1.json",
-        #"tests/dian.json"
+        "tests/dian.json"
     ]
 
     def __init__(self, algo, n, vis, loss_plot, params):
@@ -137,11 +137,24 @@ class TestNashEPIA:
             # as defined in Dian's paper...
             def f(state):
                 cost = 0.5*torch.norm(torch.mean(state, axis=0) - torch.Tensor(test["Q"]))**2 # 'a' term
-                if str(id) in test["subsets"]: # add 'r_i' term
-                    for j, dij in test["subsets"][str(id)].items():
-                        cost += 0.5*torch.norm(state[id] - state[int(j)] - torch.Tensor(dij))**2
-                return cost
+                # r_i term: note all relative distances defined relative to the 0th agent
+                d0j = test["d0j"]
+                
+                if id == 0: # relative position to all other agents
+                    for j in range(1, test["num_agents"]):
+                        dij = torch.Tensor(d0j[j])
+                        if len(dij) != 0: cost += 0.5*torch.norm(state[id] - state[j] - torch.Tensor(dij))**2
+                elif len(d0j[id]) != 0: # check if relative position was specified for this agent
+                    cost += 0.5*torch.norm(state[id] - state[0] + torch.Tensor(d0j[id]))**2 # x_id - x_0 penalty
 
+                    # NEED TO DEBUG THIS
+                    # for j in range(1, test["num_agents"]): # x_id - x_j penalty for remaining agents
+                    #     if id != j and len(d0j[j]) != 0:
+                    #         dij = torch.Tensor(d0j[j]) - torch.Tensor(d0j[id]) # dij = d0j-d0i
+                    #         cost += 0.5*torch.norm(state[id] - state[0] - dij)**2
+
+
+                return cost
             return f
         else:
             return eval(loss_fn)

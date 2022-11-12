@@ -85,8 +85,8 @@ class NashEPIA:
             all_truthful_states.append(last_state_truthful)
             
             if iterations % 100 == 0:
+                # print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
                 pass
-                #print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
 
             if frob_distance < epsilon: # convergence with
                 #print(f"Terminated on iteration: {iterations}, Last L2 Change: {frob_distance}")
@@ -97,4 +97,5 @@ class NashEPIA:
             last_state = np.copy(self.network.true_state)
 
         print(f"Did not converge within max iterations of {max_iter}")
+        distance_vector = [ np.linalg.norm(s-current_state_truthful) for s in all_truthful_states ]
         return (iterations, distance_vector, all_states, self.network.true_state)
