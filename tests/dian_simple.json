@@ -36,7 +36,7 @@
     "init_state_params": [-7, 7],
 
     "adversaries": {},
-
+    "D_local": 0,
     "eps": 0.001,
     "max_iter": 1000
 }

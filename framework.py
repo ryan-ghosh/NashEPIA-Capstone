@@ -1,4 +1,5 @@
 from algorithms import *
+from copy import deepcopy
 import numpy as np
 from matplotlib import pyplot as plt
 import torch
@@ -14,12 +15,13 @@ class Agent:
         self.loss_fn = loss_fn
         self.e_state = init_estate
 
-    def setup(self, g, f, h, G_o, G_c):
+    def setup(self, algo, params, G_o, G_c):
         # Functions (property of algorithm)
-        self.g = g
-        self.f = f
-        self.h = h if self.type == ADVERSARIAL else lambda x: x
-        self.c_state = h(self.e_state) # initialize first message
+        algo.setup(*params)
+        self.g = algo.g
+        self.f = algo.f
+        self.h = algo.h if self.type == ADVERSARIAL else lambda x: x
+        self.c_state = algo.h(self.e_state) # initialize first message
 
         # Neighbors (property of network)
         self.obs_neighbours = [i for i, v in enumerate(G_o[self.id]) if v]
@@ -58,9 +60,9 @@ class NashEPIA:
         self.network = network
         self.solver = algo
 
-    def setup(self):
+    def setup(self, params):
         for agent in self.network.agents:
-            agent.setup(self.solver.g, self.solver.f, self.solver.h, self.network.G_o, self.network.G_c)
+            agent.setup(deepcopy(self.solver), params, self.network.G_o, self.network.G_c)
 
     def run(self, epsilon, max_iter = 10000):  
         '''
@@ -83,10 +85,11 @@ class NashEPIA:
             all_states.append(last_state)
             
             if iterations % 100 == 0:
-                print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
+                pass
+                #print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
 
             if frob_distance < epsilon: # convergence with
-                print(f"Terminated on iteration: {iterations}, Last L2 Change: {frob_distance}")
+                #print(f"Terminated on iteration: {iterations}, Last L2 Change: {frob_distance}")
                 return (iterations, distance_vector, all_states, self.network.true_state)
             last_state = np.copy(self.network.true_state)
 

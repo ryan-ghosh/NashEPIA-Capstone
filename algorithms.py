@@ -5,9 +5,10 @@ import torch
 
 BASE_ITER = 100
 
-def softmax(x):
+def softmax(x, T=1):
     """Compute softmax values for each sets of scores in x."""
-    e_x = np.exp(x - np.max(x))
+    # Parameter T is the temperature
+    e_x = np.exp((x - np.max(x))/T)
     return e_x / e_x.sum()
 
 class Algorithm:
@@ -18,24 +19,38 @@ class Algorithm:
         self.f = None # update function
         self.h = None # adversarial communication function
 
-class SimpleMean(Algorithm):
-    name = "SimpleMean"
+    def setup(self):
+        pass
+
+class Baseline(Algorithm):
 
     def __repr__(self):
         return self.name
     
-    def __init__(self, alpha):
+    def __init__(self):
+        self.name = "Baseline"
+
+    def setup(self, alpha, D_local):
+        """
+        Sets up the algorithm for a new test
+        """
         self.alpha = float(alpha)
+        self.D_local = D_local
 
         def estimate_func(observations, true_state, incoming_comms): 
             arr_shape = incoming_comms[0].shape
             v = np.empty(arr_shape) # assume they get at least one 
             for agent in observations:
                 v[agent] = true_state[agent] # ground truth
-            # Use simple mean of other communications (essentially setting D=0 in his algo)
+            # Use an average with the D highest and D smallest values removed
             for agent in range(arr_shape[0]):
                 if agent not in observations:
-                    v[agent] = np.mean([c[agent] for c in incoming_comms])
+                    if self.D_local:
+                        for state_component in range(arr_shape[1]):
+                            sorted_by_component = np.sort([c[agent][state_component] for c in incoming_comms])
+                            v[agent][state_component] = np.mean(sorted_by_component[self.D_local:-self.D_local])
+                    else:
+                        v[agent] = np.mean([c[agent] for c in incoming_comms], axis=0)
             return v
         self.g = estimate_func
 
@@ -55,12 +70,14 @@ class SimpleMean(Algorithm):
         self.h = communicate_func
 
 class ExpGaussianConverge(Algorithm):
-    name = "ExpGaussianConverge"
 
     def __repr__(self):
         return self.name
     
-    def __init__(self, alpha, gamma):
+    def __init__(self):
+        self.name = "ExpGaussianConverge"
+
+    def setup(self, alpha, gamma):
         self.alpha = float(alpha)
         self.gamma = float(gamma)
         self.p = None # vector of n values for weighting truthfulness
@@ -80,13 +97,12 @@ class ExpGaussianConverge(Algorithm):
                     # Update historical truthfulness values using Gaussian approach
                     mu = np.mean([c[agent] for c in incoming_comms], axis=0)
                     cov = np.cov(np.array([c[agent] for c in incoming_comms]).T)
-                    inv_cov = np.linalg.inv(cov+np.eye(arr_shape[1])*1e-9) # to avoid singularity
+                    inv_cov = np.linalg.inv(cov+np.eye(arr_shape[1])*1e-12) # to avoid singularity
                     for m, c in enumerate(incoming_comms): # m is indexed relative to the mth communication partner
                         self.p[m] = (1-self.gamma)*self.p[m] - 0.5*self.gamma*((c[m]-mu) @ inv_cov @ (c[m]-mu).T)
 
+            weights = softmax(self.p)
             for agent in range(arr_shape[0]):
-                weights = softmax(self.p)
-                # print(weights)
                 if agent not in observations:
                     v[agent] = np.sum([weights[i]*incoming_comms[i][agent] for i in range(n_i)], axis=0) # weighted sum by truthfulness
             return v

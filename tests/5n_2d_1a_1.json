@@ -24,7 +24,7 @@
             "loss_fn": "lambda state: sum([ torch.norm(x1-x2)**2 for x1 in state for x2 in state ] )"
         }
     },
-
+    "D_local": 1,
     "eps": 0.001,
     "max_iter": 10000
 }

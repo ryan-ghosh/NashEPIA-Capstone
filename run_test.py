@@ -10,22 +10,28 @@ import json
 
 
 ALGORITHMS = { 
-    "SimpleMean": SimpleMean,
+    "Baseline": Baseline,
     "ExpGaussianConverge": ExpGaussianConverge
 }
 
 class TestNashEPIA:
     tests = [
-        # "tests/simple_test.json",
-        # "tests/simple_test_adversary.json",
-        # "tests/5n_2d_1a_1.json",
+        "tests/simple_test.json",
+        "tests/simple_test_adversary.json",
+        "tests/5n_2d_1a_1.json",
         "tests/dian.json"
     ]
 
-    def __init__(self, algo, n, vis):
+    def __init__(self, algo, n, vis, params):
         self.algo = algo
         self.n = n
         self.visualize = vis
+        self.params = params
+        if params:
+            for i,p in enumerate(params):
+                self.params[i] = float(p) # convert strings to float arg
+        if self.algo.name == "Baseline":
+            self.params.append(0)
 
     def run(self):
         total_tests = len(self.tests)
@@ -35,13 +41,15 @@ class TestNashEPIA:
         total_iter = [0]*total_tests
         for k in range(self.n):
             for i, testpath in enumerate(self.tests):
-                test, eps, max_iter = self.parse_test(testpath)
+                # Extract test info before setting up the algorithm
+                test, eps, max_iter, D_local = self.parse_test(testpath)
 
-                # baseline_Nash = NashEPIA(test, bl_model)
-                # baseline_Nash.setup()
+                # Instantiate Network and run
                 novel_Nash = NashEPIA(test, self.algo)
-                novel_Nash.setup()
-                # bl_iter, bl_dist, bl_states, bl_true_states = baseline_Nash.run() <-- need to fill some values here
+                if self.algo.name == "Baseline":
+                    self.params[-1] = D_local # update locality metric
+
+                novel_Nash.setup(self.params)
                 novel_iter, novel_dist, novel_states, novel_final_state = novel_Nash.run(eps, max_iter)
                 
                 if self.visualize and len(test.agents[0].e_state[0]) == 2:
@@ -66,21 +74,10 @@ class TestNashEPIA:
                     plt.show()
 
                 total_iter[i] += novel_iter
-                print(novel_states)
-                # if novel_iter < bl_iter:
-                #     novel_win_iter += 1
-                # else:
-                #     failed_tests.append(i)
-
-                ## Not sure how much we care about loss in comparisons since they will both converge
-                # print(f'Test {i}: {self.algo} iterations: {novel_iter} {bl_model} iterations: {bl_iter}')
         
         for i in range(total_tests): 
-            print(f'Test {i}: {self.algo} average iterations: {total_iter[i] / self.n} across {self.n} tests')
+            print(f'Test {self.tests[i]}: {self.algo} average iterations: {total_iter[i] / self.n} across {self.n} tests')
 
-        #print(f'{self.algo} had less iterations for {novel_win_iter/total_tests}% of tests compared to the baseline model')
-        #print(f'Failed tests: {failed_tests}')
-    
     def parse_test(self, test_path):
         with open(test_path, 'r') as f:
             test = json.loads(f.read())
@@ -112,7 +109,7 @@ class TestNashEPIA:
                 agents.append(Agent(i, TRUTHFUL, np.copy(init_states), loss_fn))
 
         # create Network object
-        return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"]
+        return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"], test["D_local"]
 
     def generate_loss_fn(self, test, id):
         # extract loss_fn
@@ -150,9 +147,6 @@ if __name__ == '__main__':
     num_repeat = int(args.num_repeat)
     vis = args.visualize
 
-    if params:
-        tester = TestNashEPIA(ALGORITHMS[novel_algo](*params), num_repeat, vis)
-    else:
-        tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis)
+    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, list(params))
 
     tester.run()
