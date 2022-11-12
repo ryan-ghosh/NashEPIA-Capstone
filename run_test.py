@@ -12,23 +12,25 @@ import time
 
 ALGORITHMS = { 
     "Baseline": Baseline,
+    "CumulativeL2": CumulativeL2,
     "ExpGaussianConverge": ExpGaussianConverge
 }
 
 class TestNashEPIA:
     tests = [
-        "tests/simple_test.json",
+        #"tests/simple_test.json",
         #"tests/simple_test_adversary.json",
         #"tests/5n_2d_1a_1.json",
-        #"tests/dian.json"
+        "tests/dian.json"
     ]
 
-    def __init__(self, algo, n, vis, loss_plot, params):
+    def __init__(self, algo, n, vis, loss_plot, dist_plot, params):
         self.algo = algo
         self.n = n
         self.visualize = vis
         self.params = params
         self.loss_plot = loss_plot
+        self.dist_plot = dist_plot
         if params:
             for i,p in enumerate(params):
                 self.params[i] = float(p) # convert strings to float arg
@@ -41,7 +43,7 @@ class TestNashEPIA:
         failed_tests = list()
 
         start_time = time.time()
-        total_iter = [0]*total_tests
+        all_iter = [[]]*total_tests
         for k in range(self.n):
             for i, testpath in enumerate(self.tests):
                 # Extract test info before setting up the algorithm
@@ -81,15 +83,24 @@ class TestNashEPIA:
                     plt.plot([i for i in range(novel_iter)], novel_dist)
                     plt.xlabel("Iteration")
                     plt.ylabel("$||x-x*||$")
+                    plt.yscale("log")
                     plt.show()
 
-                total_iter[i] += novel_iter
+                all_iter[i].append(novel_iter)
         
         test_time = time.time() - start_time
 
         for i in range(total_tests): 
-            print(f'Test {self.tests[i]}: {self.algo} average iterations: {total_iter[i] / self.n} across {self.n} tests')
+            print(f'Test {self.tests[i]}: {self.algo} average iterations: {sum(all_iter[i]) / self.n} across {self.n} tests')
         
+        if self.dist_plot:
+            for i, testpath in enumerate(self.tests): 
+                plt.title(testpath)
+                plt.xlabel("Iterations to Convergence")
+                plt.ylabel("Frequency")
+                plt.hist(all_iter[i])
+                plt.show()
+
         print(f'Total wall time elapsed for all tests: {test_time} s')
 
     def parse_test(self, test_path):
@@ -155,6 +166,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_repeat", required=True, help="number of times to run each test")
     parser.add_argument("--visualize", default=False, help="will show a plot of convergence")
     parser.add_argument("--loss_plot", default=False, help="Plot loss verse iterations")
+    parser.add_argument("--dist_plot", default=False, help="Plot the distribution of iterations for each test")
 
     args = parser.parse_args()
     novel_algo = args.algo
@@ -162,7 +174,8 @@ if __name__ == '__main__':
     num_repeat = int(args.num_repeat)
     vis = args.visualize
     loss_plot = bool(args.loss_plot)
+    dist_plot = bool(args.dist_plot)
 
-    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, loss_plot, list(params))
+    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, loss_plot, dist_plot, list(params))
 
     tester.run()

@@ -97,4 +97,5 @@ class NashEPIA:
             last_state = np.copy(self.network.true_state)
 
         print(f"Did not converge within max iterations of {max_iter}")
+        distance_vector = [ np.linalg.norm(s-current_state_truthful) for s in all_truthful_states ]
         return (iterations, distance_vector, all_states, self.network.true_state)
