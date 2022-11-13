@@ -10,7 +10,7 @@
             [0, 0, 1, 0],
             [0, 0, 0, 1]],
     "loss_fn": "lambda state: sum([ torch.norm(x1-x2)**2 for x1 in state for x2 in state ] )",
-    
+
     "random_init_state": true,
     "deterministic_init_state": null,
     "init_state_distribution": "normal",

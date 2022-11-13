@@ -1,6 +1,7 @@
 # Test convergence in example graphs
 
 from algorithms import *
+from NN import DeepLearning
 from framework import *
 
 import argparse
@@ -10,17 +11,18 @@ import json
 import time
 
 
-ALGORITHMS = { 
+ALGORITHMS = {
     "Baseline": Baseline,
     "CumulativeL2": CumulativeL2,
-    "ExpGaussianConverge": ExpGaussianConverge
+    "ExpGaussianConverge": ExpGaussianConverge,
+    "NN": DeepLearning
 }
 
 class TestNashEPIA:
     tests = [
-        #"tests/simple_test.json",
-        #"tests/simple_test_adversary.json",
-        #"tests/5n_2d_1a_1.json",
+        # "tests/simple_test.json",
+        # "tests/simple_test_adversary.json",
+        # "tests/5n_2d_1a_1.json",
         "tests/dian.json"
     ]
 
@@ -56,7 +58,7 @@ class TestNashEPIA:
 
                 novel_Nash.setup(self.params)
                 novel_iter, novel_dist, novel_states, novel_final_state = novel_Nash.run(eps, max_iter)
-                
+
                 if self.visualize and len(test.agents[0].e_state[0]) == 2:
                     # Realtime plot of 4 robot system
                     xmin = np.min(np.array(novel_states)[:,:,0])
@@ -67,13 +69,13 @@ class TestNashEPIA:
                     ry = ymax-ymin
 
                     plt.clf()
-                    plt.axis([xmin - 0.1*rx, xmax + 0.1*rx, 
+                    plt.axis([xmin - 0.1*rx, xmax + 0.1*rx,
                               ymin - 0.1*ry, ymax + 0.1*ry])
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
                     for robot in range(len(test.agents)):
-                        plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)], 
+                        plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)],
                             '--' if test.agents[robot].type == ADVERSARIAL else '-')
                         plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20)
                     plt.show()
@@ -87,14 +89,14 @@ class TestNashEPIA:
                     plt.show()
 
                 all_iter[i].append(novel_iter)
-        
+
         test_time = time.time() - start_time
 
-        for i in range(total_tests): 
+        for i in range(total_tests):
             print(f'Test {self.tests[i]}: {self.algo} average iterations: {sum(all_iter[i]) / self.n} across {self.n} tests')
-        
+
         if self.dist_plot:
-            for i, testpath in enumerate(self.tests): 
+            for i, testpath in enumerate(self.tests):
                 plt.title(testpath)
                 plt.xlabel("Iterations to Convergence")
                 plt.ylabel("Frequency")
@@ -142,7 +144,7 @@ class TestNashEPIA:
             loss_fn = test["adversaries"][str(id)]["loss_fn"]
         else:
             loss_fn = test["loss_fn"]
-        
+
         # generate loss_fn accordingly
         if loss_fn == "dian":
             # as defined in Dian's paper...
@@ -150,7 +152,7 @@ class TestNashEPIA:
                 cost = 0.5*torch.norm(torch.mean(state, axis=0) - torch.Tensor(test["Q"]))**2 # 'a' term
                 # r_i term: note all relative distances defined relative to the 0th agent
                 d0j = test["d0j"]
-                
+
                 if id == 0: # relative position to all other agents
                     for j in range(1, test["num_agents"]):
                         dij = torch.Tensor(d0j[j])

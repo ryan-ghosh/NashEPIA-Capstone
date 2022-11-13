@@ -21,7 +21,7 @@ class Algorithm:
         self.h = None # adversarial communication function
 
     def setup(self):
-        # Generic gradient descent update and Gaussian noise communcation function 
+        # Generic gradient descent update and Gaussian noise communcation function
         # Overwrite this in the derived class if you want to change it
 
         def update_func(agent_id, state_estimate, loss_fn, alpha=self.alpha):
@@ -44,7 +44,7 @@ class Baseline(Algorithm):
 
     def __repr__(self):
         return self.name
-    
+
     def __init__(self):
         self.name = "Baseline"
 
@@ -56,9 +56,9 @@ class Baseline(Algorithm):
         self.D_local = D_local
         super().setup()
 
-        def estimate_func(observations, true_state, incoming_comms): 
+        def estimate_func(observations, true_state, incoming_comms):
             arr_shape = incoming_comms[0].shape
-            v = np.empty(arr_shape) # assume they get at least one 
+            v = np.empty(arr_shape) # assume they get at least one
             for agent in observations:
                 v[agent] = true_state[agent] # ground truth
             # Use an average with the D highest and D smallest values removed
@@ -78,7 +78,7 @@ class ExpGaussianConverge(Algorithm):
 
     def __repr__(self):
         return self.name
-    
+
     def __init__(self):
         self.name = "ExpGaussianConverge"
 
@@ -89,13 +89,13 @@ class ExpGaussianConverge(Algorithm):
         self.p = None # vector of n values for weighting truthfulness
         super().setup()
 
-        def estimate_func(observations, true_state, incoming_comms): 
+        def estimate_func(observations, true_state, incoming_comms):
             n_i = len(incoming_comms) # number of communication partners
             arr_shape = incoming_comms[0].shape
             if self.p is None:
                 self.p = np.zeros(n_i)
 
-            v = np.empty(arr_shape) # assume they get at least one 
+            v = np.empty(arr_shape) # assume they get at least one
             for agent in range(arr_shape[0]):
                 if agent in observations:
                     v[agent] = true_state[agent] # ground truth
@@ -120,7 +120,7 @@ class CumulativeL2(Algorithm):
 
     def __repr__(self):
         return self.name
-    
+
     def __init__(self):
         self.name = "CumulativeL2"
 
@@ -130,13 +130,13 @@ class CumulativeL2(Algorithm):
         self.p = None # vector of n values for weighting truthfulness
         super().setup()
 
-        def estimate_func(observations, true_state, incoming_comms): 
+        def estimate_func(observations, true_state, incoming_comms):
             n_i = len(incoming_comms) # number of communication partners
             arr_shape = incoming_comms[0].shape
             if self.p is None:
                 self.p = np.zeros(n_i)
 
-            v = np.empty(arr_shape) # assume they get at least one 
+            v = np.empty(arr_shape) # assume they get at least one
             for agent in range(arr_shape[0]):
                 if agent in observations:
                     v[agent] = true_state[agent] # ground truth
@@ -154,4 +154,4 @@ class CumulativeL2(Algorithm):
             return v
         self.g = estimate_func
 
-       
+

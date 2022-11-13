@@ -34,7 +34,7 @@ class Agent:
         comm_messages = [all_communications[agent] for agent in self.comm_neighbours]
         self.e_state = self.f(
             self.id,
-            self.g(self.obs_neighbours, true_state, comm_messages), 
+            self.g(self.obs_neighbours, true_state, comm_messages),
             self.loss_fn
         )
         self.c_state = self.h(self.e_state)
@@ -64,7 +64,7 @@ class NashEPIA:
         for agent in self.network.agents:
             agent.setup(deepcopy(self.solver), params, self.network.G_o, self.network.G_c)
 
-    def run(self, epsilon, max_iter = 10000):  
+    def run(self, epsilon, max_iter = 20000):
         '''
         Returns number of iterations to convergence with maximum L2-difference (Frobenius norm) between states epsilon
         Also returns the final states for plotting the Nash equilibrium
@@ -83,7 +83,7 @@ class NashEPIA:
             frob_distance = np.linalg.norm( last_state_truthful.flatten() - current_state_truthful.flatten() )
             all_states.append(last_state)
             all_truthful_states.append(last_state_truthful)
-            
+
             if iterations % 100 == 0:
                 # print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
                 pass
