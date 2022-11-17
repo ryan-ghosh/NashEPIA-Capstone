@@ -93,7 +93,12 @@ class TestNashEPIA:
         test_time = time.time() - start_time
 
         for i in range(total_tests):
+            failed_tests = 0
+            for iter in all_iter[i]:
+                if iter == max_iter:
+                    failed_tests += 1
             print(f'Test {self.tests[i]}: {self.algo} average iterations: {sum(all_iter[i]) / self.n} across {self.n} tests')
+            print(f'Test {self.tests[i]}: {self.algo} number of failed tests: {failed_tests} across {self.n} tests')
 
         if self.dist_plot:
             for i, testpath in enumerate(self.tests):
