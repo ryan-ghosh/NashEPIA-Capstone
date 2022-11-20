@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import json
 import time
 
+COLORS = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'orange', 'purple', 'pink', 'brown', 'olive']
 
 ALGORITHMS = {
     "Baseline": Baseline,
@@ -47,6 +48,7 @@ class TestNashEPIA:
 
         start_time = time.time()
         all_iter = [[]]*total_tests
+        NE_dist = 0.0
         for k in range(self.n):
             for i, testpath in enumerate(self.tests):
                 # Extract test info before setting up the algorithm
@@ -75,12 +77,16 @@ class TestNashEPIA:
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
+                    coloridx = 0
                     for robot in range(len(test.agents)):
                         plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)],
-                            '--' if test.agents[robot].type == ADVERSARIAL else '-')
-                        plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20)
-                    plt.show()
+                            '--' if test.agents[robot].type == ADVERSARIAL else '-', color=COLORS[coloridx])
+                        plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20, color=COLORS[coloridx])
+                        coloridx += 1
 
+                    plt.show()
+                if NE is not None:
+                    NE_dist += sum([np.linalg.norm(novel_states[-1] - NE)])
                 if self.loss_plot:
                     plt.title("Distance to the stationary point as a function of iterations")
                     plt.plot([i for i in range(novel_iter)], novel_dist)
@@ -91,17 +97,38 @@ class TestNashEPIA:
 
                     if NE is not None:
                         dist_vec = [ np.linalg.norm(s-NE) for s in novel_states ]
-                        plt.title("Distance to the Nash equilibrium as a function of iterations")
+                        plt.title("Cumulative-L2-Error")
                         plt.plot([i for i in range(novel_iter)], dist_vec)
                         plt.xlabel("Iteration")
                         plt.ylabel("$||x-x*||$")
                         plt.yscale("log")
                         plt.show()
 
+                    ## subplots
+                    individual_loss = list()
+                    x = [i for i in range(novel_iter)]
+                    for robot in range(len(test.agents)):
+                        if test.agents[robot].type == TRUTHFUL:
+                            individual_loss.append([np.linalg.norm(novel_states[i][robot] - novel_final_state[robot]) for i in range(novel_iter)])
+
+                    fig, axs = plt.subplots(3,3)
+                    fig.suptitle('Individual Loss for Truthful Agents')
+                    axs[0,0].plot(x, individual_loss[0], COLORS[1])
+                    axs[0,1].plot(x, individual_loss[1], COLORS[2])
+                    axs[0,2].plot(x, individual_loss[2], COLORS[3])
+                    axs[1,0].plot(x, individual_loss[3], COLORS[4])
+                    axs[1,1].plot(x, individual_loss[4], COLORS[6])
+                    axs[1,2].plot(x, individual_loss[5], COLORS[7])
+                    axs[2,0].plot(x, individual_loss[6], COLORS[8])
+                    axs[2,1].plot(x, individual_loss[7], COLORS[9])
+                    axs[2,2].plot(x, individual_loss[8], COLORS[10])
+                    fig.savefig('agent_losses.png')
+                    fig.show()
+
                 all_iter[i].append(novel_iter)
 
         test_time = time.time() - start_time
-
+        print(f"Average final dist: {NE_dist/self.n}")
         for i in range(total_tests):
             failed_tests = 0
             for iter in all_iter[i]:
