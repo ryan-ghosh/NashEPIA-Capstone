@@ -31,6 +31,19 @@
     "d0j": [[], [1,0], [2,0], [3,0],
             [4,0], [5,0], [0,-1], [1,-1],
             [2,-1], [3, -1], [4, -1], [5, -1]],
+    "NE":  [[-2.5, 0.5],
+            [-1.5, 0.5],
+            [-0.5, 0.5],
+            [0.5, 0.5],
+            [1.5, 0.5],
+            [2.5, 0.5],
+            [-2.5, -0.5],
+            [-1.5, -0.5],
+            [-0.5, -0.5],
+            [0.5, -0.5],
+            [1.5, -0.5],
+            [2.5, -0.5]],
+
 
     "random_init_state": true,
     "deterministic_init_state": null,
@@ -47,7 +60,7 @@
                     "8": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "9": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "11": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"}},
-    "D_local": 1,
+    "D_local": 2,
     "eps": 0.001,
-    "max_iter": 2000
+    "max_iter": 10000
 }

@@ -23,7 +23,8 @@ class TestNashEPIA:
         # "tests/simple_test.json",
         # "tests/simple_test_adversary.json",
         # "tests/5n_2d_1a_1.json",
-        "tests/dian.json"
+        # "tests/dian.json",
+        "tests/dian10adv.json"
     ]
 
     def __init__(self, algo, n, vis, loss_plot, dist_plot, params):
@@ -49,7 +50,7 @@ class TestNashEPIA:
         for k in range(self.n):
             for i, testpath in enumerate(self.tests):
                 # Extract test info before setting up the algorithm
-                test, eps, max_iter, D_local = self.parse_test(testpath)
+                test, eps, max_iter, D_local, NE = self.parse_test(testpath)
 
                 # Instantiate Network and run
                 novel_Nash = NashEPIA(test, self.algo)
@@ -81,12 +82,21 @@ class TestNashEPIA:
                     plt.show()
 
                 if self.loss_plot:
-                    plt.title("Distance to the Nash equilibrium as a function of iterations")
+                    plt.title("Distance to the stationary point as a function of iterations")
                     plt.plot([i for i in range(novel_iter)], novel_dist)
                     plt.xlabel("Iteration")
-                    plt.ylabel("$||x-x*||$")
+                    plt.ylabel("$||x-\\bar{x}||$")
                     plt.yscale("log")
                     plt.show()
+
+                    if NE is not None:
+                        dist_vec = [ np.linalg.norm(s-NE) for s in novel_states ]
+                        plt.title("Distance to the Nash equilibrium as a function of iterations")
+                        plt.plot([i for i in range(novel_iter)], dist_vec)
+                        plt.xlabel("Iteration")
+                        plt.ylabel("$||x-x*||$")
+                        plt.yscale("log")
+                        plt.show()
 
                 all_iter[i].append(novel_iter)
 
@@ -141,7 +151,8 @@ class TestNashEPIA:
                 agents.append(Agent(i, TRUTHFUL, np.copy(init_states), loss_fn))
 
         # create Network object
-        return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"], test["D_local"]
+        NE = np.array(test["NE"]) if "NE" in test else None
+        return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"], test["D_local"], NE
 
     def generate_loss_fn(self, test, id):
         # extract loss_fn
