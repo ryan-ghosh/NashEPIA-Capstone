@@ -77,7 +77,7 @@ class TestNashEPIA:
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
                     if NE is not None:
-                        plt.scatter(NE[:,0], NE[:,1], s=20, color = 'red', marker='s')
+                        plt.scatter(NE[:,0], NE[:,1], s=10, color = 'red', marker='s')
                     for robot in range(len(test.agents)):
                         plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)],
                             '--' if test.agents[robot].type == ADVERSARIAL else '-')
