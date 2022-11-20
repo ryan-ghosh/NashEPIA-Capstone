@@ -23,8 +23,9 @@ class TestNashEPIA:
         # "tests/simple_test.json",
         # "tests/simple_test_adversary.json",
         # "tests/5n_2d_1a_1.json",
-        # "tests/dian.json",
-        "tests/dian10adv.json"
+        "tests/dian.json",
+        # "tests/dian_simple.json",
+        # "tests/dian10adv.json"
     ]
 
     def __init__(self, algo, n, vis, loss_plot, dist_plot, params):
@@ -75,6 +76,8 @@ class TestNashEPIA:
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
+                    if NE is not None:
+                        plt.scatter(NE[:,0], NE[:,1], s=20, color = 'red', marker='s')
                     for robot in range(len(test.agents)):
                         plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)],
                             '--' if test.agents[robot].type == ADVERSARIAL else '-')
@@ -181,9 +184,8 @@ class TestNashEPIA:
                     #     if id != j and len(d0j[j]) != 0:
                     #         dij = torch.Tensor(d0j[j]) - torch.Tensor(d0j[id]) # dij = d0j-d0i
                     #         cost += 0.5*torch.norm(state[id] - state[0] - dij)**2
-
-
                 return cost
+                
             return f
         else:
             return eval(loss_fn)
