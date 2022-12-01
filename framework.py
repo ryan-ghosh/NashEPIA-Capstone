@@ -85,11 +85,11 @@ class NashEPIA:
             all_truthful_states.append(last_state_truthful)
 
             if iterations % 100 == 0:
-                print(f"Iteration: {iterations}, not converged")
+                print(f"Iteration: {iterations}")
                 pass
 
             if frob_distance < epsilon: # convergence with
-                #print(f"Terminated on iteration: {iterations}, Last L2 Change: {frob_distance}")
+                print(f"Terminated on iteration: {iterations}")
                 # Compute distance vector from states for truthful agents
                 distance_vector = [ np.linalg.norm(s-current_state_truthful) for s in all_truthful_states ]
                 return (iterations, distance_vector, all_states, self.network.true_state)

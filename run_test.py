@@ -19,6 +19,8 @@ ALGORITHMS = {
     "NN": DeepLearning
 }
 
+np.random.seed(2048)
+
 class TestNashEPIA:
     tests = [
         # "tests/simple_test.json",
@@ -71,14 +73,14 @@ class TestNashEPIA:
                     ymax = np.max(np.array(novel_states)[:,:,1])
                     ry = ymax-ymin
 
-                    plt.clf()
+                    #plt.clf()
                     plt.axis([xmin - 0.1*rx, xmax + 0.1*rx,
                               ymin - 0.1*ry, ymax + 0.1*ry])
                     plt.xlabel("x")
                     plt.ylabel("y")
-                    plt.title(f"Realtime Dynamics of the Robot System")
+                    plt.title(f"Realtime Dynamics of the Drone Network")
                     if NE is not None:
-                        plt.scatter(NE[:,0], NE[:,1], s=10, color = 'red', marker='s')
+                        plt.scatter(NE[:,0], NE[:,1], s=30, color = 'red', marker='s')
 
                     ## BEGIN INDIVIDUAL AGENT LOSS CODE. THIS ONLY WORKS IN DIAN'S CASE
                     coloridx = 0
@@ -88,8 +90,7 @@ class TestNashEPIA:
                         plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20, color=COLORS[coloridx])
                         coloridx += 1
 
-                    plt.show()
-
+                    #plt.show()
                     x = [i for i in range(novel_iter)]
                     individual_loss = NN_AGENT_LOSSES if self.algo.name == "NN" else INDIVIDUAL_AGENT_LOSS
                     fig, axs = plt.subplots(3,3)
