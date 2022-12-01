@@ -44,6 +44,19 @@
             [-1.5, 0.5],
             [-2.5, 0.5]],
 
+    "NE":  [[2.5, -0.5],
+            [1.5, -0.5],
+            [0.5, -0.5],
+            [-0.5, -0.5],
+            [-1.5, -0.5],
+            [-2.5, -0.5],
+            [2.5, 0.5],
+            [1.5, 0.5],
+            [0.5, 0.5],
+            [-0.5, 0.5],
+            [-1.5, 0.5],
+            [-2.5, 0.5]],
+
     "random_init_state": true,
     "deterministic_init_state": null,
     "init_state_distribution": "uniform",
@@ -53,6 +66,6 @@
                      "5": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "11": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"}},
     "D_local": 1,
-    "eps": 0.00001,
-    "max_iter": 10000
+    "eps": 0.001,
+    "max_iter": 5000
 }
