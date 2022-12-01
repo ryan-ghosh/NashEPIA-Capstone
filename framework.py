@@ -85,7 +85,7 @@ class NashEPIA:
             all_truthful_states.append(last_state_truthful)
 
             if iterations % 100 == 0:
-                # print(f"Iteration: {iterations}, Last L2 Change: {frob_distance}")
+                print(f"Iteration: {iterations}, not converged")
                 pass
 
             if frob_distance < epsilon: # convergence with
