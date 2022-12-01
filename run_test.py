@@ -92,7 +92,8 @@ class TestNashEPIA:
                         plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20, color=COLORS[coloridx])
                         coloridx += 1
 
-                        #plt.show()
+                    plt.savefig(f"{self.algo.name}_{self.tests[0][6:-5]}_dynamics.png")  
+
                     x = [i for i in range(novel_iter)]
                     individual_loss = NN_AGENT_LOSSES if self.algo.name == "NN" else INDIVIDUAL_AGENT_LOSS
                     if self.tests[0] == "tests/dian.json":
@@ -116,7 +117,8 @@ class TestNashEPIA:
                         axs[1,0].plot(x, individual_loss[7], COLORS[7])
                         axs[1,1].plot(x, individual_loss[8], COLORS[8])
                         axs[1,2].plot(x, individual_loss[10], COLORS[10])
-                    
+
+                    plt.savefig(f"{self.algo.name}_{self.tests[0][6:-5]}_agent_loss.png")  
                     plt.show()
 
                 if self.loss_plot:
@@ -136,6 +138,7 @@ class TestNashEPIA:
                         plt.xlabel("Iteration")
                         plt.ylabel("$||x-x*||$")
                         plt.yscale("log")
+                        plt.savefig(f"{self.algo.name}_{self.tests[0][6:-5]}_distance.png")  
                         plt.show()
 
                 all_iter[i].append(novel_iter)
