@@ -52,7 +52,7 @@
     "adversaries": {"0": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                      "5": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "11": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"}},
-    "D_local": 2,
+    "D_local": 1,
     "eps": 0.00001,
     "max_iter": 10000
 }
