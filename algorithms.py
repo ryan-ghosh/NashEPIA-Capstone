@@ -4,6 +4,8 @@ import numpy as np
 from scipy import stats
 import torch
 
+INDIVIDUAL_AGENT_LOSS = [[] for _ in range(12)]
+
 BASE_ITER = 100
 
 def softmax(x, T=1):
@@ -28,6 +30,7 @@ class Algorithm:
             x_tensor = torch.autograd.Variable(torch.Tensor(state_estimate), requires_grad=True)
             y = loss_fn(x_tensor)
             y.backward()
+            INDIVIDUAL_AGENT_LOSS[agent_id].append(y.item())
             grad = x_tensor.grad
             new_state = state_estimate
             new_state[agent_id] -= alpha * grad[agent_id].cpu().detach().numpy() # gradient descent step

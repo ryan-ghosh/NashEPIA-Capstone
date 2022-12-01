@@ -1,7 +1,7 @@
 # Test convergence in example graphs
 
 from algorithms import *
-from NN import DeepLearning
+from NN import DeepLearning, NN_AGENT_LOSSES
 from framework import *
 
 import argparse
@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import json
 import time
 
+COLORS = ['r', 'b', 'g', 'c', 'm', 'y', 'k', 'orange', 'purple', 'pink', 'brown', 'olive']
 
 ALGORITHMS = {
     "Baseline": Baseline,
@@ -78,15 +79,35 @@ class TestNashEPIA:
                     plt.title(f"Realtime Dynamics of the Robot System")
                     if NE is not None:
                         plt.scatter(NE[:,0], NE[:,1], s=10, color = 'red', marker='s')
+
+                    ## BEGIN INDIVIDUAL AGENT LOSS CODE. THIS ONLY WORKS IN DIAN'S CASE
+                    coloridx = 0
                     for robot in range(len(test.agents)):
                         plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)],
-                            '--' if test.agents[robot].type == ADVERSARIAL else '-')
-                        plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20)
+                            '--' if test.agents[robot].type == ADVERSARIAL else '-', color=COLORS[coloridx])
+                        plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20, color=COLORS[coloridx])
+                        coloridx += 1
+
+                    plt.show()
+
+                    x = [i for i in range(novel_iter)]
+                    individual_loss = NN_AGENT_LOSSES if self.algo.name == "NN" else INDIVIDUAL_AGENT_LOSS
+                    fig, axs = plt.subplots(3,3)
+                    fig.suptitle('Individual Loss for Truthful Agents')
+                    axs[0,0].plot(x, individual_loss[1], COLORS[1])
+                    axs[0,1].plot(x, individual_loss[2], COLORS[2])
+                    axs[0,2].plot(x, individual_loss[3], COLORS[3])
+                    axs[1,0].plot(x, individual_loss[4], COLORS[4])
+                    axs[1,1].plot(x, individual_loss[6], COLORS[6])
+                    axs[1,2].plot(x, individual_loss[7], COLORS[7])
+                    axs[2,0].plot(x, individual_loss[8], COLORS[8])
+                    axs[2,1].plot(x, individual_loss[9], COLORS[9])
+                    axs[2,2].plot(x, individual_loss[10], COLORS[10])
                     plt.show()
 
                 if self.loss_plot:
-                    plt.title("Distance to the stationary point as a function of iterations")
                     plt.plot([i for i in range(novel_iter)], novel_dist)
+                    plt.title("Distance to the stationary point as a function of iterations")
                     plt.xlabel("Iteration")
                     plt.ylabel("$||x-\\bar{x}||$")
                     plt.yscale("log")
@@ -185,7 +206,7 @@ class TestNashEPIA:
                     #         dij = torch.Tensor(d0j[j]) - torch.Tensor(d0j[id]) # dij = d0j-d0i
                     #         cost += 0.5*torch.norm(state[id] - state[0] - dij)**2
                 return cost
-                
+
             return f
         else:
             return eval(loss_fn)

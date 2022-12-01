@@ -5,6 +5,8 @@ import torch.optim as optim
 import numpy as np
 from algorithms import Algorithm
 
+NN_AGENT_LOSSES = [[] for _ in range(12)]
+
 class MLP(nn.Module):
     def __init__(self, input_size):
         self.size = input_size
@@ -56,7 +58,8 @@ class DeepLearning(Algorithm):
 
                     inp = torch.FloatTensor(np.array([c[agent] for c in incoming_comms]))
                     e = self.model(inp)
-                    v[agent] = e.cpu().detach().numpy()
+
+                    v[agent] = e.cpu().detach().numpy().flatten()
             return v
 
         def update_func(agent_id, state_estimate, loss_fn, alpha=self.learning_rate):
@@ -68,6 +71,7 @@ class DeepLearning(Algorithm):
             #     self.agent_optims[agent_id].zero_grad()
             self.optim.step()
             self.optim.zero_grad()
+            NN_AGENT_LOSSES[agent_id].append(y.item())
             grad = x_tensor.grad
             new_state = state_estimate
             new_state[agent_id] -= alpha * grad[agent_id].cpu().detach().numpy() # gradient descent step
