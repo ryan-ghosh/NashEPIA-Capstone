@@ -23,7 +23,9 @@ class TestNashEPIA:
         # "tests/simple_test.json",
         # "tests/simple_test_adversary.json",
         # "tests/5n_2d_1a_1.json",
-        "tests/dian.json"
+        "tests/dian.json",
+        # "tests/dian_simple.json",
+        # "tests/dian10adv.json"
     ]
 
     def __init__(self, algo, n, vis, loss_plot, dist_plot, params):
@@ -49,7 +51,7 @@ class TestNashEPIA:
         for k in range(self.n):
             for i, testpath in enumerate(self.tests):
                 # Extract test info before setting up the algorithm
-                test, eps, max_iter, D_local = self.parse_test(testpath)
+                test, eps, max_iter, D_local, NE = self.parse_test(testpath)
 
                 # Instantiate Network and run
                 novel_Nash = NashEPIA(test, self.algo)
@@ -74,6 +76,8 @@ class TestNashEPIA:
                     plt.xlabel("x")
                     plt.ylabel("y")
                     plt.title(f"Realtime Dynamics of the Robot System")
+                    if NE is not None:
+                        plt.scatter(NE[:,0], NE[:,1], s=10, color = 'red', marker='s')
                     for robot in range(len(test.agents)):
                         plt.plot([novel_states[i][robot][0] for i in range(novel_iter)], [novel_states[i][robot][1] for i in range(novel_iter)],
                             '--' if test.agents[robot].type == ADVERSARIAL else '-')
@@ -81,19 +85,33 @@ class TestNashEPIA:
                     plt.show()
 
                 if self.loss_plot:
-                    plt.title("Distance to the Nash equilibrium as a function of iterations")
+                    plt.title("Distance to the stationary point as a function of iterations")
                     plt.plot([i for i in range(novel_iter)], novel_dist)
                     plt.xlabel("Iteration")
-                    plt.ylabel("$||x-x*||$")
+                    plt.ylabel("$||x-\\bar{x}||$")
                     plt.yscale("log")
                     plt.show()
+
+                    if NE is not None:
+                        dist_vec = [ np.linalg.norm(s-NE) for s in novel_states ]
+                        plt.title("Distance to the Nash equilibrium as a function of iterations")
+                        plt.plot([i for i in range(novel_iter)], dist_vec)
+                        plt.xlabel("Iteration")
+                        plt.ylabel("$||x-x*||$")
+                        plt.yscale("log")
+                        plt.show()
 
                 all_iter[i].append(novel_iter)
 
         test_time = time.time() - start_time
 
         for i in range(total_tests):
+            failed_tests = 0
+            for iter in all_iter[i]:
+                if iter == max_iter:
+                    failed_tests += 1
             print(f'Test {self.tests[i]}: {self.algo} average iterations: {sum(all_iter[i]) / self.n} across {self.n} tests')
+            print(f'Test {self.tests[i]}: {self.algo} number of failed tests: {failed_tests} across {self.n} tests')
 
         if self.dist_plot:
             for i, testpath in enumerate(self.tests):
@@ -136,7 +154,8 @@ class TestNashEPIA:
                 agents.append(Agent(i, TRUTHFUL, np.copy(init_states), loss_fn))
 
         # create Network object
-        return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"], test["D_local"]
+        NE = np.array(test["NE"]) if "NE" in test else None
+        return Network(agents, init_states, G_c, G_o, adversaries), test["eps"], test["max_iter"], test["D_local"], NE
 
     def generate_loss_fn(self, test, id):
         # extract loss_fn
@@ -165,9 +184,8 @@ class TestNashEPIA:
                     #     if id != j and len(d0j[j]) != 0:
                     #         dij = torch.Tensor(d0j[j]) - torch.Tensor(d0j[id]) # dij = d0j-d0i
                     #         cost += 0.5*torch.norm(state[id] - state[0] - dij)**2
-
-
                 return cost
+                
             return f
         else:
             return eval(loss_fn)
