@@ -21,23 +21,25 @@ ALGORITHMS = {
 
 np.random.seed(2048)
 
-class TestNashEPIA:
-    tests = [
-        # "tests/simple_test.json",
-        # "tests/simple_test_adversary.json",
-        # "tests/5n_2d_1a_1.json",
-        "tests/dian.json",
-        # "tests/dian_simple.json",
-        # "tests/dian10adv.json"
-    ]
+test_set = [
+    # "tests/simple_test.json",
+    # "tests/simple_test_adversary.json",
+    # "tests/5n_2d_1a_1.json",
+    "tests/dian.json",
+    # "tests/dian_simple.json",
+    "tests/dian10adv.json"
+]
 
-    def __init__(self, algo, n, vis, loss_plot, dist_plot, params):
+class TestNashEPIA:
+
+    def __init__(self, algo, n, vis, loss_plot, dist_plot, params, test_index):
         self.algo = algo
         self.n = n
         self.visualize = vis
         self.params = params
         self.loss_plot = loss_plot
         self.dist_plot = dist_plot
+        self.tests = [test_set[test_index]]
         if params:
             for i,p in enumerate(params):
                 self.params[i] = float(p) # convert strings to float arg
@@ -90,31 +92,44 @@ class TestNashEPIA:
                         plt.scatter(novel_final_state[robot][0], novel_final_state[robot][1], marker="*", s=20, color=COLORS[coloridx])
                         coloridx += 1
 
-                    #plt.show()
+                        #plt.show()
                     x = [i for i in range(novel_iter)]
                     individual_loss = NN_AGENT_LOSSES if self.algo.name == "NN" else INDIVIDUAL_AGENT_LOSS
-                    fig, axs = plt.subplots(3,3)
-                    fig.suptitle('Individual Loss for Truthful Agents')
-                    axs[0,0].plot(x, individual_loss[1], COLORS[1])
-                    axs[0,1].plot(x, individual_loss[2], COLORS[2])
-                    axs[0,2].plot(x, individual_loss[3], COLORS[3])
-                    axs[1,0].plot(x, individual_loss[4], COLORS[4])
-                    axs[1,1].plot(x, individual_loss[6], COLORS[6])
-                    axs[1,2].plot(x, individual_loss[7], COLORS[7])
-                    axs[2,0].plot(x, individual_loss[8], COLORS[8])
-                    axs[2,1].plot(x, individual_loss[9], COLORS[9])
-                    axs[2,2].plot(x, individual_loss[10], COLORS[10])
+                    if self.tests[0] == "tests/dian.json":
+                        fig, axs = plt.subplots(3,3)
+                        fig.suptitle('Individual Loss for Truthful Agents')
+                        axs[0,0].plot(x, individual_loss[1], COLORS[1])
+                        axs[0,1].plot(x, individual_loss[2], COLORS[2])
+                        axs[0,2].plot(x, individual_loss[3], COLORS[3])
+                        axs[1,0].plot(x, individual_loss[4], COLORS[4])
+                        axs[1,1].plot(x, individual_loss[6], COLORS[6])
+                        axs[1,2].plot(x, individual_loss[7], COLORS[7])
+                        axs[2,0].plot(x, individual_loss[8], COLORS[8])
+                        axs[2,1].plot(x, individual_loss[9], COLORS[9])
+                        axs[2,2].plot(x, individual_loss[10], COLORS[10])
+                    elif self.tests[0] == "tests/dian10adv.json":
+                        fig, axs = plt.subplots(2,3)
+                        fig.suptitle('Individual Loss for Truthful Agents')
+                        axs[0,0].plot(x, individual_loss[3], COLORS[3])
+                        axs[0,1].plot(x, individual_loss[4], COLORS[4])
+                        axs[0,2].plot(x, individual_loss[6], COLORS[6])
+                        axs[1,0].plot(x, individual_loss[7], COLORS[7])
+                        axs[1,1].plot(x, individual_loss[8], COLORS[8])
+                        axs[1,2].plot(x, individual_loss[10], COLORS[10])
+                    
                     plt.show()
 
                 if self.loss_plot:
+                    plt.subplot(211)
                     plt.plot([i for i in range(novel_iter)], novel_dist)
                     plt.title("Distance to the stationary point as a function of iterations")
                     plt.xlabel("Iteration")
                     plt.ylabel("$||x-\\bar{x}||$")
                     plt.yscale("log")
-                    plt.show()
+                    #plt.show()
 
                     if NE is not None:
+                        plt.subplot(212)
                         dist_vec = [ np.linalg.norm(s-NE) for s in novel_states ]
                         plt.title("Distance to the Nash equilibrium as a function of iterations")
                         plt.plot([i for i in range(novel_iter)], dist_vec)
@@ -222,6 +237,7 @@ if __name__ == '__main__':
     parser.add_argument("--visualize", default=False, help="will show a plot of convergence")
     parser.add_argument("--loss_plot", default=False, help="Plot loss verse iterations")
     parser.add_argument("--dist_plot", default=False, help="Plot the distribution of iterations for each test")
+    parser.add_argument("--test_index", default=0, help="The index of the test to use")
 
     args = parser.parse_args()
     novel_algo = args.algo
@@ -230,7 +246,8 @@ if __name__ == '__main__':
     vis = args.visualize
     loss_plot = bool(args.loss_plot)
     dist_plot = bool(args.dist_plot)
+    test_index = int(args.test_index)
 
-    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, loss_plot, dist_plot, list(params))
+    tester = TestNashEPIA(ALGORITHMS[novel_algo](), num_repeat, vis, loss_plot, dist_plot, list(params), test_index)
 
     tester.run()

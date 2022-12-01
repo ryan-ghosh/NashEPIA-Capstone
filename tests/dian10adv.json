@@ -53,14 +53,10 @@
     "adversaries": {"0": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "1": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "2": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
-                    "3": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
-                    "4": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "5": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
-                    "7": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
-                    "8": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "9": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"},
                     "11": {"type": "gaussian noise", "params": [0, 1], "loss_fn": "dian"}},
-    "D_local": 2,
-    "eps": 0.00001,
-    "max_iter": 10000
+    "D_local": 1,
+    "eps": 0.001,
+    "max_iter": 5000
 }
