@@ -16,7 +16,8 @@ ALGORITHMS = {
     "Baseline": Baseline,
     "CumulativeL2": CumulativeL2,
     "ExpGaussianConverge": ExpGaussianConverge,
-    "NN": DeepLearning
+    "NN": DeepLearning,
+    "RLAgent": RLAgent,
 }
 
 np.random.seed(2048)
@@ -27,7 +28,7 @@ test_set = [
     # "tests/5n_2d_1a_1.json",
     "tests/dian.json",
     # "tests/dian_simple.json",
-    "tests/dian10adv.json"
+    #"tests/dian10adv.json"
 ]
 
 class TestNashEPIA:

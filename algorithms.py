@@ -1,8 +1,9 @@
 # Algorithm implementations
 
 import numpy as np
-from scipy import stats
+from scipy.optimize import minimize, differential_evolution
 import torch
+from torch import nn
 
 INDIVIDUAL_AGENT_LOSS = [[] for _ in range(12)]
 
@@ -118,7 +119,6 @@ class ExpGaussianConverge(Algorithm):
             return v
         self.g = estimate_func
 
-
 class CumulativeL2(Algorithm):
 
     def __repr__(self):
@@ -157,4 +157,87 @@ class CumulativeL2(Algorithm):
             return v
         self.g = estimate_func
 
+class RLAgent(Algorithm):
+    def __repr__(self):
+        return self.name
 
+    def __init__(self):
+        self.name = "RLAgent"
+        self.dqn = None
+
+    def setup(self, alpha, beta, gamma):
+        self.alpha = float(alpha)
+        self.beta = float(beta)
+        self.gamma = float(gamma)
+        self.p = None
+        T = 100
+        super().setup()
+
+        # SAME AS CL2 for now!
+        def estimate_func(observations, true_state, incoming_comms):
+            n_i = len(incoming_comms) # number of communication partners
+            arr_shape = incoming_comms[0].shape
+            if self.p is None:
+                self.p = np.zeros(n_i)
+
+            v = np.empty(arr_shape) # assume they get at least one
+            for agent in range(arr_shape[0]):
+                if agent in observations:
+                    v[agent] = true_state[agent] # ground truth
+                else:
+                    # Update historical truthfulness values using cumulative L2 norm approach
+                    comms = np.array([c[agent] for c in incoming_comms])
+                    mu = np.mean(comms, axis=0)
+                    for m, c in enumerate(incoming_comms): # m is indexed relative to the mth communication partner
+                        self.p[m] -= np.linalg.norm(c[agent] - mu)**2
+
+            weights = softmax(self.p, T) # temperatured softmax
+            for agent in range(arr_shape[0]):
+                if agent not in observations:
+                    v[agent] = np.sum([weights[i]*incoming_comms[i][agent] for i in range(n_i)], axis=0) # weighted sum by truthfulness
+            return v
+        self.g = estimate_func
+
+        def update_func(agent_id, state_estimate, loss_fn, alpha=self.alpha):
+            # Feed full state information to Q network
+            if not self.dqn:
+                self.dqn = DQN(len(state_estimate), len(state_estimate[0]))
+            
+            def bellman_func(a):
+                new_state = state_estimate
+                new_state[agent_id] += a
+                new_state = torch.Tensor(new_state)
+                return self.alpha*np.linalg.norm(a)**2 + self.beta + self.gamma*loss_fn(new_state)
+
+            minimizer = differential_evolution(bellman_func, bounds=[(-2,2),(-2,2)], maxiter=500)
+            print(minimizer) # not minimizing for some reason
+            opt_policy = minimizer.x
+            opt_value = bellman_func(opt_policy)
+
+            print(opt_policy)
+            x_tensor = torch.autograd.Variable(torch.Tensor(state_estimate), requires_grad=True)
+            bellman_loss = lambda x_tensor: (self.dqn(x_tensor) - opt_value)**2
+            print(bellman_loss(x_tensor))
+            bellman_loss(x_tensor).backward() # Q-network training
+
+            print(opt_policy)
+            return opt_policy
+
+        self.f = update_func
+
+        
+class DQN(nn.Module):
+    def __init__(self, n, m):
+        super(DQN, self).__init__()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(n*m, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, m),
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        return self.linear_relu_stack(x)
